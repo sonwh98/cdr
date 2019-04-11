@@ -69,6 +69,7 @@
 
 (defn cdr-ui [state]
   [:div
+   [mdc/tab-bar]
    [code-area state]
    #_[code-area state]])
 
