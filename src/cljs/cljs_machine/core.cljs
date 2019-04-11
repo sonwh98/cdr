@@ -38,11 +38,13 @@
                                                                              :mode "text/x-clojure"
                                                                              :autoCloseBrackets true
                                                                              :matchBrackets true
-                                                                             :theme "dracula"})]
+                                                                             ;;:theme "dracula"
+                                                                             })
+                                   button (js/document.querySelector ".foo-button")]
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)
-                               )
-                             )
+                               (js/mdc.ripple.MDCRipple.attachTo button)
+                               ))
       :reagent-render (fn [state]
                         [:div 
                          [:textarea#editor {:style {:width "100%"
@@ -56,7 +58,9 @@
                                                       (prn "r=" r)))}
                           "Eval"]
                          [:button {:on-click #(reset! code-text "")}
-                          "Clear"]])})))
+                          "Clear"]
+                         [:button {:class "foo-button mdc-button"} "Button"]
+                         ])})))
 
 (defn repl-area [state]
   (let [repl-text (r/cursor state [:repl-text])]
@@ -70,7 +74,7 @@
 (defn cdr-ui [state]
   [:div
    [code-area state]
-   [repl-area state]])
+   #_[code-area state]])
 
 (defn init []
   (prn "init")
