@@ -1,4 +1,4 @@
-(defproject  cljs-machine "0.0.1"
+(defproject  cdr "0.0.1"
   :min-lein-version "2.8.3" 
   :dependencies [[org.clojure/clojure "1.10.0"]  
                  [com.kaicode/wocket "0.1.5-SNAPSHOT"]
@@ -16,16 +16,16 @@
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src/cljs"]
-                :figwheel {:on-jsload "cljs-machine.core/jsload"}
-                :compiler {:main cljs-machine.core
+                :figwheel {:on-jsload "cdr.core/jsload"}
+                :compiler {:main cdr.core
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/cljs-machine.js"
+                           :output-to "resources/public/js/compiled/cdr.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
                {:id "min"
                 :source-paths ["src/cljs"]
-                :compiler {:output-to "resources/public/js/compiled/cljs-machine.min.js"
+                :compiler {:output-to "resources/public/js/compiled/cdr.min.js"
                            :optimizations :advanced}}]}
   
   :profiles {:project/dev {:dependencies [[binaryage/devtools "0.9.10"]

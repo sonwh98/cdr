@@ -1,6 +1,6 @@
 (ns user
   (:require [figwheel-sidecar.repl-api :as f]
-            [cljs-machine.server :as s]))
+            [cdr.server :as s]))
 
 (defn start []
   (s/start)

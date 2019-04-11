@@ -1,4 +1,4 @@
-(ns cljs-machine.core
+(ns cdr.core
   (:require [reagent.core :as r]
             [cljs.js :as cljs]
             [clojure.core.async :as a :include-macros true]

@@ -1,4 +1,4 @@
-(ns cljs-machine.server
+(ns cdr.server
   (:require [compojure.core :refer [defroutes GET]]
             [compojure.route :as r]
             [org.httpkit.server :as h]
