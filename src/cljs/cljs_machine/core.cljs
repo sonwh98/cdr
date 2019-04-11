@@ -4,7 +4,7 @@
             [clojure.core.async :as a :include-macros true]
             [com.kaicode.wocket.client :as ws :refer [process-msg]]
             [taoensso.timbre :as log :include-macros true]
-            [cljsjs.codemirror]))
+            #_[cljsjs.codemirror]))
 
 (def app-state (r/atom {:code-text ""
                         :repl-text ""}))
@@ -33,10 +33,14 @@
         codemirror (atom nil)]
     (r/create-class
      {:component-did-mount (fn [this]
-                             (let [editor (js/document.getElementById "editor")]
-                               
-                               (reset! codemirror (js/CodeMirror.fromTextArea editor #js{:lineNumbers true
-                                                                                         :mode "text/x-clojure"}))
+                             (let [editor (js/document.getElementById "editor")
+                                   cm (js/CodeMirror.fromTextArea editor #js{:lineNumbers true
+                                                                             :mode "text/x-clojure"
+                                                                             :autoCloseBrackets true
+                                                                             :matchBrackets true
+                                                                             :theme "dracula"})]
+                               (reset! codemirror cm)
+                               (js/parinferCodeMirror.init cm)
                                )
                              )
       :reagent-render (fn [state]
