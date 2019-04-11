@@ -1,16 +1,19 @@
 (ns cdr.core
-  (:require [reagent.core :as r]
-            [cljs.js :as cljs]
-            [clojure.core.async :as a :include-macros true]
+  (:require [clojure.core.async :as a :include-macros true]
+            [cljs.js :as cljs] 
             [com.kaicode.wocket.client :as ws :refer [process-msg]]
             [taoensso.timbre :as log :include-macros true]
-            #_[cljsjs.codemirror]))
+            [reagent.core :as r]
+            [cdr.mdc :as mdc]
+            ;;[stigmergy.mr-clean :as r]
+            ))
 
 (def app-state (r/atom {:code-text ""
                         :repl-text ""}))
 
-
 (def cljs-state (cljs.js/empty-state))
+
+
 
 (def async-eval (let [c (a/chan)]
                   (fn [s-expression]
@@ -39,28 +42,21 @@
                                                                              :autoCloseBrackets true
                                                                              :matchBrackets true
                                                                              ;;:theme "dracula"
-                                                                             })
-                                   button (js/document.querySelector ".foo-button")]
+                                                                             })]
                                (reset! codemirror cm)
-                               (js/parinferCodeMirror.init cm)
-                               (js/mdc.ripple.MDCRipple.attachTo button)
-                               ))
+                               (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
                         [:div 
                          [:textarea#editor {:style {:width "100%"
-                                                    :height 200}
-                                            
-                                            }]
-                         [:button {:on-click #(a/go (let [txt (.. @codemirror getValue)
-                                                          s-expression (cljs.reader/read-string txt)
-                                                          r (a/<! (async-eval s-expression))]
-                                                      (prn s-expression)
-                                                      (prn "r=" r)))}
+                                                    :height 200}}]
+                         [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
+                                                             s-expression (cljs.reader/read-string txt)
+                                                             r (a/<! (async-eval s-expression))]
+                                                         (prn s-expression)
+                                                         (prn "r=" r)))}
                           "Eval"]
-                         [:button {:on-click #(reset! code-text "")}
-                          "Clear"]
-                         [:button {:class "foo-button mdc-button"} "Button"]
-                         ])})))
+                         [mdc/button {:on-click #(reset! code-text "")}
+                          "Clear"]])})))
 
 (defn repl-area [state]
   (let [repl-text (r/cursor state [:repl-text])]

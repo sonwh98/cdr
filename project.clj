@@ -4,7 +4,8 @@
                  [com.kaicode/wocket "0.1.5-SNAPSHOT"]
                  [org.clojure/clojurescript "1.10.520"]
                  [compojure "1.6.1"]
-                 [reagent "0.8.1"]]
+                 [reagent "0.8.1"]
+                 [stigmergy/mr-clean "0.1.0-SNAPSHOT"]]
 
   :plugins [[lein-figwheel "0.5.18"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
