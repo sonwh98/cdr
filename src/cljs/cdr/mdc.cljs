@@ -37,31 +37,51 @@
 
 (def drawer (r/create-class
              {:component-did-mount (fn [this]
-
-                                     (let [element (js/document.querySelector ".mdc-drawer")]
-                                       (prn "mount " element)
-                                       (js/mdc.drawer.MDCDrawer.attachTo element)))
+                                     (let [this-el (dom/dom-node this)
+                                           mdc-drawer (.. this-el (querySelector ".mdc-drawer"))
+                                           drawer (js/mdc.drawer.MDCDrawer.attachTo mdc-drawer)
+                                           drawer-button (.. this-el (querySelector "button"))
+                                           main-content-el (.. this-el (querySelector ".drawer-main-content"))]
+                                       (.. drawer-button (addEventListener "click"
+                                                                           #(set! (.-open drawer) true)))
+                                       (js/document.body.addEventListener "MDCDrawer:closed"
+                                                                          #(.. main-content-el focus))))
               :reagent-render
-              (fn [& params]
-                [:div
-                 [:aside {:class "mdc-drawer mdc-drawer--dismissible"}
+              (fn [{:keys [content] :as params}]
+                [:div {:class "drawer-frame-root"}
+                 [:aside {:class "mdc-drawer mdc-drawer--modal"}
+                  [:div {:class "mdc-drawer__header"}
+                   [:h3 {:class "mdc-drawer__title"} "Project"]
+                   [:h6 {:class "mdc-drawer__subtitle"} "CDR"]]
                   [:div {:class "mdc-drawer__content"}
-                   [:div {:class "mdc-list"}
-                    [:a {:class "mdc-list-item mdc-list-item--activated", :href "#", :aria-current "page"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "inbox"]
-                     [:span {:class "mdc-list-item__text"} "Inbox"]]
-                    [:a {:class "mdc-list-item", :href "#"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "send"]
-                     [:span {:class "mdc-list-item__text"} "Outgoing"]]
-                    [:a {:class "mdc-list-item", :href "#"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "drafts"]
-                     [:span {:class "mdc-list-item__text"} "Drafts"]]]]]
-                 [:div {:class "mdc-drawer-app-content"}
-                  [:header {:class "mdc-top-app-bar app-bar", :id "app-bar"}
+                   [:nav {:class "mdc-list"}
+                    (for [i (range 10)]
+                      ^{:key i} [:a {:class "mdc-list-item " :tabIndex i
+                                     :aria-selected "true"}
+                                 [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "file"]
+                                 (str "file-" i ".clj")])
+                    
+                    [:hr {:class "mdc-list-divider"}]
+                    [:h6 {:class "mdc-list-group__subheader"} "Labels"]
+                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
+                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"] "Family"]
+                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
+                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"] "Friends"]
+                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
+                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"] "Work"]
+                    [:hr {:class "mdc-list-divider"}]
+                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
+                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "settings"] "Settings"]
+                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
+                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "announcement"] "Help &amp; feedback"]]]]
+                 [:div {:class "mdc-drawer-scrim"}]
+                 [:div {:class "drawer-frame-app-content"}
+                  [:header {:class "mdc-top-app-bar drawer-top-app-bar"}
                    [:div {:class "mdc-top-app-bar__row"}
-                    [:section {:class "mdc-top-app-bar__section mdc-top-app-bar__section--align-start"}
-                     [:a {:href "#", :class "demo-menu material-icons mdc-top-app-bar__navigation-icon"} "menu"]
-                     [:span {:class "mdc-top-app-bar__title"} "Dismissible Drawer"]]]]
-                  [:main {:class "main-content", :id "main-content"}
-                   [:div {:class "mdc-top-app-bar--fixed-adjust"} "App Content"]]]]
+                    [:button {:class "material-icons mdc-top-app-bar__navigation-icon "} "menu"]]]
+                  [:div {:class "drawer-main-content"
+                         :tabIndex 1}
+                   [:div {:class "mdc-top-app-bar--fixed-adjust"}]
+                   content
+                   ]]]
                 )}))

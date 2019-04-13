@@ -12,9 +12,6 @@
                         :repl-text ""}))
 
 (def cljs-state (cljs.js/empty-state))
-
-
-
 (def async-eval (let [c (a/chan)]
                   (fn [s-expression]
                     (cljs.js/eval cljs-state s-expression {:eval cljs.js/js-eval
@@ -50,7 +47,8 @@
                          [:textarea#editor {:style {:width "100%"
                                                     :height 200}}]
                          [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
-                                                             s-expression (cljs.reader/read-string txt)
+                                                             s-expression (cljs.reader/read-string
+                                                                           (str "(do " txt ")"))
                                                              r (a/<! (async-eval s-expression))]
                                                          (prn s-expression)
                                                          (prn "r=" r)))}
@@ -69,9 +67,10 @@
 
 (defn cdr-ui [state]
   [:div
-   [mdc/tab-bar]
-   [code-area state]
-   #_[code-area state]])
+   [mdc/drawer {:content [code-area state]
+                :drawer-content [:h1 "drawer"]}]
+   #_[mdc/tab-bar]
+   ])
 
 (defn init []
   (prn "init")
