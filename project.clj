@@ -10,14 +10,16 @@
   :plugins [[lein-figwheel "0.5.18"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]]
 
-  :clean-targets ^{:protect false} ["resources/public/js/compiled"                                                                                 :target-path]
+  :clean-targets ^{:protect false} ["resources/public/js/compiled"
+                                    :target-path]
 
-
+  :figwheel {:server-port 3450}
   
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src/cljs"]
-                :figwheel {:on-jsload "cdr.core/jsload"}
+                :figwheel {:on-jsload "cdr.core/jsload"
+                           :websocket-host :js-client-host}
                 :compiler {:main cdr.core
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/cdr.js"
