@@ -27,6 +27,11 @@
                                         )
                                       )))
                     c)))
+(comment
+  (a/go (let [expr '(ns foo.bar)
+              r (async-eval expr)]
+          (prn "r=" (a/<! r))))
+  )
 
 (defn code-area [state]
   (let [code-text (r/cursor state [:code-text])
