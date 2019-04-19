@@ -1,6 +1,7 @@
 (ns user
   (:require [figwheel-sidecar.repl-api :as f]
-            [cdr.server :as s]))
+            [cdr.server :as s]
+            [taoensso.timbre :as log :include-macros true]))
 
 (defn start []
   (s/start)
@@ -12,3 +13,5 @@
 
 (defn cljs []
   (f/cljs-repl))
+
+(log/set-level! :info)
