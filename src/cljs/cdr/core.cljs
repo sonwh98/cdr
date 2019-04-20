@@ -16,7 +16,7 @@
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
 
-(defn set-current-ns! [s-expression]
+(defn process-ns! [s-expression]
   (let [ns-form? #(and (list? %)
                        (= 'ns (first %)))
         ns-form (or
@@ -28,35 +28,31 @@
                           first))
         ns-symbol (second ns-form)]
     (when ns-symbol
-      (reset! current-ns ns-symbol))))
+      (cljs.js/eval cljs-state ns-form {:eval cljs.js/js-eval
+                                        :ns @current-ns
+                                        :def-emits-var true
+                                        :verbose true}
+                    (fn [a-map]
+                      (when (nil? (-> a-map :error :value))
+                        (reset! current-ns ns-symbol)))))
+    (remove ns-form? s-expression)))
 
-(comment
-  (set-current-ns! '((ns 'foo.bar)))
-  (set-current-ns! '(ns 'foo.bar))
-  (filter (fn [m]
-            (when (and (list? m)
-                       (= 'ns (first m)))
-              true))
-          '((ns foo.bar) [1 2 3]))
-  
-  
-  )
 (def async-eval (let [c (a/chan)]
                   (fn [s-expression]
-                    (set-current-ns! s-expression)
-                    (cljs.js/eval cljs-state s-expression {:eval cljs.js/js-eval
-                                                           :ns @current-ns
-                                                           :def-emits-var true
-                                                           :verbose true}
-                                  (fn [a-map]
-                                    (log/info (keys a-map))
-                                    (if-let [value (:value a-map)]
-                                      (do (log/info a-map)
-                                          (a/put! c value))
-                                      (let [error {:error a-map}]
-                                        (log/info error)
-                                        )
-                                      )))
+                    (let [s-expression (process-ns! s-expression)]
+                      (cljs.js/eval cljs-state s-expression {:eval cljs.js/js-eval
+                                                             :ns @current-ns
+                                                             :def-emits-var true
+                                                             :verbose true}
+                                    (fn [a-map]
+                                      (log/info (keys a-map))
+                                      (if-let [value (:value a-map)]
+                                        (do (log/info a-map)
+                                            (a/put! c value))
+                                        (let [error {:error a-map}]
+                                          (log/info error)
+                                          )
+                                        ))))
                     c)))
 (comment
   (a/go (let [;;expr '(ns foo.bar)
