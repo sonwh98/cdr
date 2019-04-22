@@ -21,6 +21,17 @@
   (let [decoder (js/TextDecoder. "UTF-8")]
     (.. decoder (decode array-buffer))))
 
+(defn obj->clj
+  [obj]
+  (if (goog.isObject obj)
+    (-> (fn [result key]
+          (let [v (goog.object/get obj key)]
+            (if (= "function" (goog/typeOf v))
+              result
+              (assoc result key (obj->clj v)))))
+        (reduce {} (.getKeys goog/object obj)))
+    obj))
+
 (defn process-ns! [s-expression]
   (let [ns-form? #(and (list? %)
                        (= 'ns (first %)))
@@ -158,4 +169,20 @@
       (prn err)
       (prn files)
       ))
+
+  (defn rdir [dir]
+    (a/go
+      (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
+        (doseq [f files]
+          (let [f-full-path (str dir "/" f)
+                [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
+                stat (obj->clj stat)]
+            (if (= (stat "type") "dir")
+              (rdir f-full-path)
+              (prn f-full-path)
+              )
+            ))
+        )))
+
+  (rdir "/cdr2/src")
   )
