@@ -7,6 +7,7 @@
             [cdr.mdc :as mdc]
             ;;[stigmergy.mr-clean :as r]
             [taoensso.timbre :as log :include-macros true]
+            [cljs-await.core :refer [await]]
             ))
 
 (def app-state (r/atom {:code-text ""
@@ -110,14 +111,37 @@
    ])
 
 (defn init []
-  (prn "init")
-  )
+  (set! (.-fs js/window) (js/LightningFS. "fs"))
+  (js/git.plugins.set "fs" (.-fs js/window))
+  (set! (.-pfs js/window)  js/window.fs.promises)
+
+  
+  (ws/connect-to-websocket-server {:port 3000})
+  (r/render-component [cdr-ui app-state] (js/document.getElementById "app"))
+  (log/set-level! :info))
 
 (defmethod process-msg :chat-broadcast [[_ msg]]
   (prn "from clj " msg)
-  (swap! app-state assoc :repl-text msg)
-  )
+  (swap! app-state assoc :repl-text msg))
 
-(ws/connect-to-websocket-server {:port 3000})
-(r/render-component [cdr-ui app-state] (js/document.getElementById "app"))
-(log/set-level! :info)
+
+(init)
+
+(comment
+  (a/go
+    (let [dir "/cdr2"]
+      #_(prn "1->" (a/<! (await (js/window.pfs.mkdir dir))))
+      (prn "2->" (a/<! (await (js/window.pfs.readdir dir))))
+      #_(js/console.log (a/<! (await (js/git.clone #js{
+                                                       :corsProxy "https://cors.isomorphic-git.org"
+                                                       :url "https://github.com/sonwh98/cdr.git"
+                                                       :ref "master"
+                                                       :singleBranch true
+                                                       :depth 10}))))
+      #_(prn "4->" (a/<! (await (js/window.pfs.readdir dir))))
+      (prn "4->" (a/<! (await (js/window.pfs.readFile (str dir "/src/clj/user.clj")))))
+      ))
+
+  (a/go
+    (prn (a/<! (await (js/git.log #js{:dir "/cdr"})))))
+  )
