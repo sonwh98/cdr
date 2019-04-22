@@ -17,6 +17,10 @@
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
 
+(defn array-buffer->str [array-buffer]
+  (let [decoder (js/TextDecoder. "UTF-8")]
+    (.. decoder (decode array-buffer))))
+
 (defn process-ns! [s-expression]
   (let [ns-form? #(and (list? %)
                        (= 'ns (first %)))
@@ -130,18 +134,28 @@
 (comment
   (a/go
     (let [dir "/cdr2"]
-      #_(prn "1->" (a/<! (await (js/window.pfs.mkdir dir))))
+      (prn "1->" (a/<! (await (js/window.pfs.mkdir dir))))
       (prn "2->" (a/<! (await (js/window.pfs.readdir dir))))
-      #_(js/console.log (a/<! (await (js/git.clone #js{
-                                                       :corsProxy "https://cors.isomorphic-git.org"
-                                                       :url "https://github.com/sonwh98/cdr.git"
-                                                       :ref "master"
-                                                       :singleBranch true
-                                                       :depth 10}))))
-      #_(prn "4->" (a/<! (await (js/window.pfs.readdir dir))))
+      (prn "3->" (a/<! (await (js/git.clone #js{:dir "/cdr2"
+                                                :corsProxy "https://cors.isomorphic-git.org"
+                                                :url "https://github.com/sonwh98/cdr.git"
+                                                :ref "master"
+                                                :singleBranch true
+                                                :depth 10}))))
+      (prn "4->" (a/<! (await (js/window.pfs.readdir dir))))
       (prn "4->" (a/<! (await (js/window.pfs.readFile (str dir "/src/clj/user.clj")))))
       ))
 
   (a/go
-    (prn (a/<! (await (js/git.log #js{:dir "/cdr"})))))
+    (prn (a/<! (await (js/git.log #js{:dir "/cdr2"}))))
+    (let [[err buff] (a/<! (await (js/window.pfs.readFile "/cdr2/src/clj/user.clj")))]
+      (prn "user.clj=" (array-buffer->str  buff ) ))
+    )
+
+  (a/go
+    (let [[err files] (a/<! (await (js/git.listFiles #js{:dir "/cdr2/"
+                                                         :ref "HEAD"})))]
+      (prn err)
+      (prn files)
+      ))
   )
