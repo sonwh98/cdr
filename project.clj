@@ -7,6 +7,7 @@
                  [reagent "0.8.1"]
                  [stigmergy/mr-clean "0.1.0-SNAPSHOT"]
                  [cljs-await "1.0.2"]
+                 [org.clojure/core.async "0.4.490"]
                  ]
 
   :plugins [[lein-figwheel "0.5.18"]
