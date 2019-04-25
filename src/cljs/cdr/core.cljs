@@ -72,17 +72,19 @@
                                         ))))
                     c)))
 
-(def list-files (fn [{:keys [dir on-file] :as params}]
-                  (a/go
-                    (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
-                      (doseq [f files]
-                        (let [f-full-path (str dir "/" f)
-                              [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
-                              stat (obj->clj stat)]
-                          (if (= (stat "type") "dir")
-                            (list-files (merge params
-                                               {:dir f-full-path}))
-                            (on-file f-full-path))))))))
+(def walk-dir (fn [{:keys [dir on-file] :as params}]
+                (a/go
+                  (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
+                    (doseq [f files]
+                      (let [f-full-path (str dir "/" f)
+                            [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
+                            stat (obj->clj stat)]
+                        (if (= (stat "type") "dir")
+                          (walk-dir (merge params
+                                           {:dir f-full-path}))
+                          (when on-file
+                            (on-file f-full-path)))))))))
+
 
 (comment
   (a/go (let [;;expr '(ns foo.bar)
@@ -138,16 +140,18 @@
    [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"]
    file])
 
-(defn git-clone [{:keys [url dir]}]
+(defn git-clone [{:keys [url dir on-complete]}]
   (a/go
-    (prn "1->" (a/<! (await (js/window.pfs.mkdir dir))))
-    (prn "3->" (a/<! (await (js/git.clone #js{:dir dir
-                                              :corsProxy "https://cors.isomorphic-git.org"
-                                              :url url
-                                              :ref "master"
-                                              :singleBranch true
-                                              :depth 10}))))
-    (prn "4->" (a/<! (await (js/window.pfs.readdir dir))))))
+    (a/<! (await (js/window.pfs.mkdir dir)))
+    (a/<! (await (js/git.clone #js{:dir dir
+                                   :corsProxy "https://cors.isomorphic-git.org"
+                                   :url url
+                                   :ref "master"
+                                   :singleBranch true
+                                   :depth 10})))
+    (when on-complete
+      (prn "on-complete")
+      (on-complete))))
 
 (defn git-input [project-name]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
@@ -158,26 +162,30 @@
                 :style {:width "100%"}
                 :value @value
                 :on-change (fn [evt]
-                             (reset! value (-> evt .-target .-value)))
-                }
-        ]
+                             (reset! value (-> evt .-target .-value)))}]
        [:div.mdc-button {:on-click (fn [evt]
                                      (let [git-url @value
                                            repo-name (some-> git-url
                                                              (str/split "/")
                                                              last
-                                                             (str/replace ".git" ""))]
+                                                             (str/replace ".git" ""))
+                                           dir (str "/" repo-name)
+                                           all-files (r/cursor app-state [:files])]
                                        (reset! project-name repo-name)
-                                       (swap! app-state assoc-in [:files] [])
-                                       (git-clone {:url git-url
-                                                   :dir (str "/" repo-name)})
+                                       (reset! all-files [])
                                        
-                                       (list-files {:dir (str "/" repo-name)
-                                                    :on-file (fn [file]
-                                                               (let [file (str/replace file (re-pattern (str "/" repo-name)) "")]
-                                                                 (if-not (re-find #".git" file)
-                                                                   (swap! app-state update-in [:files] conj file)))
-                                                               )})
+                                       (a/go
+                                         (a/<! (git-clone {:url git-url
+                                                           :dir dir})                                               )
+                                         (a/<! (walk-dir {:dir dir
+                                                          :on-file (fn [file]
+                                                                     (let [file (str/replace file (re-pattern (str "/" repo-name)) "")]
+                                                                       (when-not (re-find #".git" file)
+                                                                         (swap! all-files conj file))))}))
+
+                                         )
+                                       
+                                       
                                        ))} "GET"]])
     )
   )
@@ -185,12 +193,11 @@
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
                                           (when-let [project-name (:project-name @state)]
-                                            (list-files {:dir (str "/" project-name)
-                                                         :on-file (fn [file]
-                                                                    (let [file (str/replace file #"/cdr2/" "")]
-                                                                      (if-not (re-find #".git" file)
-                                                                        (swap! state update-in [:files] conj file)))
-                                                                    )}))               
+                                            (walk-dir {:dir (str "/" project-name)
+                                                       :on-file (fn [file]
+                                                                  (if-not (re-find #".git" file)
+                                                                    (swap! state update-in [:files] conj file))
+                                                                  )}))               
                                           )
                    
                    :reagent-render (fn [state]
@@ -256,15 +263,20 @@
       ))
 
 
-  (list-files {:dir "/cdr2"
-               :on-file (fn [file]
-                          (prn file)
-                          )})
+  (git-clone {:url "https://github.com/sonwh98/cdr.git"
+              :dir "/cdr" })
+  
+  (walk-dir {:dir "/cdr"
+             :on-file (fn [files]
+                        (prn "f=" files)
+                        )})
 
-  (list-files {:dir (str "/" )
-               :on-file (fn [file]
-                          (let [file (str/replace file #"/cdr2/" "")]
-                            (if-not (re-find #".git" file)
-                              (swap! app-state update-in [:files] conj file)))
-                          )})
+
+  
+  (walk-dir {:dir (str "/" )
+             :on-file (fn [file]
+                        (let [file (str/replace file #"/cdr2/" "")]
+                          (if-not (re-find #".git" file)
+                            (swap! app-state update-in [:files] conj file)))
+                        )})
   )
