@@ -47,7 +47,7 @@
                                        (js/document.body.addEventListener "MDCDrawer:closed"
                                                                           #(.. main-content-el focus))))
               :reagent-render
-              (fn [{:keys [content] :as params}]
+              (fn [{:keys [content drawer-content] :as params}]
                 [:div {:class "drawer-frame-root"}
                  [:aside {:class "mdc-drawer mdc-drawer--modal"}
                   [:div {:class "mdc-drawer__header"}
@@ -55,11 +55,8 @@
                    [:h6 {:class "mdc-drawer__subtitle"} "CDR"]]
                   [:div {:class "mdc-drawer__content"}
                    [:nav {:class "mdc-list"}
-                    (for [i (range 10)]
-                      ^{:key i} [:a {:class "mdc-list-item " :tabIndex i
-                                     :aria-selected "true"}
-                                 [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "file"]
-                                 (str "file-" i ".clj")])
+                    drawer-content
+                    
                     
                     [:hr {:class "mdc-list-divider"}]
                     [:h6 {:class "mdc-list-group__subheader"} "Labels"]

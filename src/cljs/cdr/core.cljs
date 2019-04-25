@@ -8,6 +8,7 @@
             ;;[stigmergy.mr-clean :as r]
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
+            [clojure.string :as str]
             ))
 
 (def app-state (r/atom {:code-text ""
@@ -70,6 +71,19 @@
                                           )
                                         ))))
                     c)))
+
+(def list-files (fn [{:keys [dir on-file] :as params}]
+                  (a/go
+                    (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
+                      (doseq [f files]
+                        (let [f-full-path (str dir "/" f)
+                              [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
+                              stat (obj->clj stat)]
+                          (if (= (stat "type") "dir")
+                            (list-files (merge params
+                                               {:dir f-full-path}))
+                            (on-file f-full-path))))))))
+
 (comment
   (a/go (let [;;expr '(ns foo.bar)
               expr '(defn hello [n] (str "hello " n))
@@ -118,12 +132,29 @@
                  :read-only true}]
      [:button "Clear REPL"]]))
 
+(defn file-item [file]
+  [:a {:class "mdc-list-item " :tabIndex 0
+       :aria-selected "true"}
+   [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"]
+   file])
+
 (defn cdr-ui [state]
-  [:div
-   [mdc/drawer {:content [code-area state]
-                :drawer-content [:h1 "drawer"]}]
-   #_[mdc/tab-bar]
-   ])
+  (r/create-class {:component-did-mount (fn [component]
+                                          (list-files {:dir "/cdr2"
+                                                       :on-file (fn [file]
+                                                                  (let [file (str/replace file #"/cdr2/" "")]
+                                                                    (if-not (re-find #".git" file)
+                                                                      (swap! state update-in [:files] conj file)))
+                                                                  )})               
+                                          )
+                   
+                   :reagent-render (fn [state]
+                                     [:div
+                                      [mdc/drawer {:content [code-area state]
+                                                   :drawer-content (for [file (-> @state :files)]
+                                                                     ^{:key file} [file-item file])}]
+                                      #_[mdc/tab-bar]
+                                      ])}))
 
 (defn init []
   (set! (.-fs js/window) (js/LightningFS. "fs"))
@@ -170,19 +201,9 @@
       (prn files)
       ))
 
-  (defn rdir [dir]
-    (a/go
-      (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
-        (doseq [f files]
-          (let [f-full-path (str dir "/" f)
-                [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
-                stat (obj->clj stat)]
-            (if (= (stat "type") "dir")
-              (rdir f-full-path)
-              (prn f-full-path)
-              )
-            ))
-        )))
 
-  (rdir "/cdr2/src")
+  (list-files {:dir "/cdr2"
+               :on-file (fn [file]
+                          (prn file)
+                          )})
   )
