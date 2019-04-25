@@ -47,12 +47,13 @@
                                        (js/document.body.addEventListener "MDCDrawer:closed"
                                                                           #(.. main-content-el focus))))
               :reagent-render
-              (fn [{:keys [content drawer-content] :as params}]
+              (fn [{:keys [drawer-header drawer-content content ] :as params}]
                 [:div {:class "drawer-frame-root"}
                  [:aside {:class "mdc-drawer mdc-drawer--modal"}
                   [:div {:class "mdc-drawer__header"}
-                   [:h3 {:class "mdc-drawer__title"} "Project"]
-                   [:h6 {:class "mdc-drawer__subtitle"} "CDR"]]
+                   (prn drawer-header)
+                   drawer-header
+                   ]
                   [:div {:class "mdc-drawer__content"}
                    [:nav {:class "mdc-list"}
                     drawer-content

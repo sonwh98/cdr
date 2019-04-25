@@ -150,7 +150,16 @@
                    
                    :reagent-render (fn [state]
                                      [:div
-                                      [mdc/drawer {:content [code-area state]
+                                      [mdc/drawer {:drawer-header [:div
+                                                                   [:h3 {:class "mdc-drawer__title"} "Project"]
+                                                                   [:h6 {:class "mdc-drawer__subtitle"} "CDR"]
+                                                                   [:input {:type :text
+                                                                            :placeholder "git URL"
+                                                                            :style {:width "100%"}
+                                                                            :value "https://github.com/sonwh98/cdr.git"}]
+                                                                   [:div.mdc-button {:on-click #(js/alert "click")} "GET"]
+                                                                   ]
+                                                   :content [code-area state]
                                                    :drawer-content (for [file (-> @state :files)]
                                                                      ^{:key file} [file-item file])}]
                                       #_[mdc/tab-bar]
