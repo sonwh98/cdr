@@ -138,30 +138,73 @@
    [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"]
    file])
 
+(defn git-clone [{:keys [url dir]}]
+  (a/go
+    (prn "1->" (a/<! (await (js/window.pfs.mkdir dir))))
+    (prn "3->" (a/<! (await (js/git.clone #js{:dir dir
+                                              :corsProxy "https://cors.isomorphic-git.org"
+                                              :url url
+                                              :ref "master"
+                                              :singleBranch true
+                                              :depth 10}))))
+    (prn "4->" (a/<! (await (js/window.pfs.readdir dir))))))
+
+(defn git-input [project-name]
+  (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
+    (fn [project-name]
+      [:div
+       [:input {:type :text
+                :placeholder "git URL"
+                :style {:width "100%"}
+                :value @value
+                :on-change (fn [evt]
+                             (reset! value (-> evt .-target .-value)))
+                }
+        ]
+       [:div.mdc-button {:on-click (fn [evt]
+                                     (let [git-url @value
+                                           repo-name (some-> git-url
+                                                             (str/split "/")
+                                                             last
+                                                             (str/replace ".git" ""))]
+                                       (reset! project-name repo-name)
+                                       (swap! app-state assoc-in [:files] [])
+                                       (git-clone {:url git-url
+                                                   :dir (str "/" repo-name)})
+                                       
+                                       (list-files {:dir (str "/" repo-name)
+                                                    :on-file (fn [file]
+                                                               (let [file (str/replace file (re-pattern (str "/" repo-name)) "")]
+                                                                 (if-not (re-find #".git" file)
+                                                                   (swap! app-state update-in [:files] conj file)))
+                                                               )})
+                                       ))} "GET"]])
+    )
+  )
+
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
-                                          (list-files {:dir "/cdr2"
-                                                       :on-file (fn [file]
-                                                                  (let [file (str/replace file #"/cdr2/" "")]
-                                                                    (if-not (re-find #".git" file)
-                                                                      (swap! state update-in [:files] conj file)))
-                                                                  )})               
+                                          (when-let [project-name (:project-name @state)]
+                                            (list-files {:dir (str "/" project-name)
+                                                         :on-file (fn [file]
+                                                                    (let [file (str/replace file #"/cdr2/" "")]
+                                                                      (if-not (re-find #".git" file)
+                                                                        (swap! state update-in [:files] conj file)))
+                                                                    )}))               
                                           )
                    
                    :reagent-render (fn [state]
                                      [:div
-                                      [mdc/drawer {:drawer-header [:div
-                                                                   [:h3 {:class "mdc-drawer__title"} "Project"]
-                                                                   [:h6 {:class "mdc-drawer__subtitle"} "CDR"]
-                                                                   [:input {:type :text
-                                                                            :placeholder "git URL"
-                                                                            :style {:width "100%"}
-                                                                            :value "https://github.com/sonwh98/cdr.git"}]
-                                                                   [:div.mdc-button {:on-click #(js/alert "click")} "GET"]
-                                                                   ]
-                                                   :content [code-area state]
-                                                   :drawer-content (for [file (-> @state :files)]
-                                                                     ^{:key file} [file-item file])}]
+                                      (let [project-name (r/cursor state [:project-name])]
+                                        [mdc/drawer {:drawer-header [:div
+                                                                     [:h3 {:class "mdc-drawer__title"} "Project"]
+                                                                     [:h6 {:class "mdc-drawer__subtitle"} @project-name]
+                                                                     [git-input project-name]
+                                                                     
+                                                                     ]
+                                                     :content [code-area state]
+                                                     :drawer-content (for [file (-> @state :files)]
+                                                                       ^{:key file} [file-item file])}])
                                       #_[mdc/tab-bar]
                                       ])}))
 
@@ -181,6 +224,8 @@
 
 
 (init)
+
+
 
 (comment
   (a/go
@@ -214,5 +259,12 @@
   (list-files {:dir "/cdr2"
                :on-file (fn [file]
                           (prn file)
+                          )})
+
+  (list-files {:dir (str "/" )
+               :on-file (fn [file]
+                          (let [file (str/replace file #"/cdr2/" "")]
+                            (if-not (re-find #".git" file)
+                              (swap! app-state update-in [:files] conj file)))
                           )})
   )

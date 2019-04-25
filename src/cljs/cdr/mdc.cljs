@@ -51,9 +51,7 @@
                 [:div {:class "drawer-frame-root"}
                  [:aside {:class "mdc-drawer mdc-drawer--modal"}
                   [:div {:class "mdc-drawer__header"}
-                   (prn drawer-header)
-                   drawer-header
-                   ]
+                   drawer-header]
                   [:div {:class "mdc-drawer__content"}
                    [:nav {:class "mdc-list"}
                     drawer-content
