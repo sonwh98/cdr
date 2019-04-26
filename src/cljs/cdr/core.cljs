@@ -136,8 +136,14 @@
 
 (defn file-item [file]
   [:a {:class "mdc-list-item " :tabIndex 0
-       :aria-selected "true"}
-   [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"]
+       :aria-selected "true"
+       :on-click #(let [cm (js/document.querySelector ".CodeMirror")
+                        cm (.. cm -CodeMirror)]
+                    (a/go
+                      (let [[err file-content] (a/<! (await (js/window.pfs.readFile file)))
+                            file-content (array-buffer->str file-content)]
+                        (.. cm getDoc (setValue file-content)))))}
+   [:i {:class "material-icons mdc-list-item__graphic" :aria-hidden "true"} "bookmark"]
    file])
 
 (defn git-clone [{:keys [url dir on-complete]}]
@@ -179,17 +185,8 @@
                                                            :dir dir})                                               )
                                          (a/<! (walk-dir {:dir dir
                                                           :on-file (fn [file]
-                                                                     (let [file (str/replace file (re-pattern (str "/" repo-name)) "")]
-                                                                       (when-not (re-find #".git" file)
-                                                                         (swap! all-files conj file))))}))
-
-                                         )
-                                       
-                                       
-                                       ))} "GET"]])
-    )
-  )
-
+                                                                     (when-not (re-find #".git" file)
+                                                                       (swap! all-files conj file)))})))))} "GET"]])))
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
                                           (when-let [project-name (:project-name @state)]
