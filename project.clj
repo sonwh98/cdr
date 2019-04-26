@@ -41,6 +41,7 @@
                            }
              :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
                             :source-paths ["src/cljs" "src/clj"]
+                            :main cdr.server
                             :aot :all}
 
              :dev [:project/dev]
