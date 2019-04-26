@@ -37,7 +37,7 @@
   :profiles {:project/dev {:dependencies [[binaryage/devtools "0.9.10"]
                                           [figwheel-sidecar "0.5.18"]
                                           [cider/piggieback "0.4.0"]]
-                           :source-paths ["src/cljs" "src/clj"] 
+                           :source-paths ["src/cljs" "src/clj" "env/dev/clj"] 
                            }
              :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
                             :source-paths ["src/cljs" "src/clj"]
