@@ -32,7 +32,7 @@
                {:id "min"
                 :source-paths ["src/cljs"]
                 :compiler {:output-to "resources/public/js/compiled/cdr.min.js"
-                           :optimizations :advanced}}]}
+                           :optimizations :simple}}]}
   
   :profiles {:project/dev {:dependencies [[binaryage/devtools "0.9.10"]
                                           [figwheel-sidecar "0.5.18"]
