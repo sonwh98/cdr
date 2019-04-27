@@ -13,6 +13,7 @@ The only dependency is a web browser like Chrome and FireFox.
 Deploy using Docker:
 
 ```bash
+% git clone https://github.com/sonwh98/cdr.git
 % cd cdr
 % docker build -t cdr .
 % docker run -p 3000:3000 cdr
