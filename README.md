@@ -8,6 +8,18 @@ alike.
 CDR integrates with git hosted on github or bitbucket.  CDR uses parainfer with CodeMirror for structural editing.
 The only dependency is a web browser like Chrome and FireFox.
 
+# Quick Start
+
+Deploy using Docker:
+
+```bash
+% cd cdr
+% docker build -t cdr .
+% docker run -p 3000:3000 cdr
+```
+
+Once your docker container is running connect to http://localhost:3000/index.html
+
 # Demo
 
 http://cdr.stigmergy.systems
