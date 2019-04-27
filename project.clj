@@ -8,6 +8,7 @@
                  [stigmergy/mr-clean "0.1.0-SNAPSHOT"]
                  [cljs-await "1.0.2"]
                  [org.clojure/core.async "0.4.490"]
+                 [binaryage/devtools "0.9.10"]
                  ]
 
   :plugins [[lein-figwheel "0.5.18"]
@@ -31,10 +32,15 @@
                            :preloads [devtools.preload]}}
                {:id "min"
                 :source-paths ["src/cljs"]
-                :compiler {:output-to "resources/public/js/compiled/cdr.min.js"
-                           :optimizations :simple}}]}
+                :compiler {:main cdr.core
+                           :asset-path "js/compiled/out2"
+                           :output-to "resources/public/js/compiled/cdr.js"
+                           :output-dir "resources/public/js/compiled/out2"
+                           :source-map-timestamp true
+                           :preloads [devtools.preload]}}
+               ]}
   
-  :profiles {:project/dev {:dependencies [[binaryage/devtools "0.9.10"]
+  :profiles {:project/dev {:dependencies [
                                           [figwheel-sidecar "0.5.18"]
                                           [cider/piggieback "0.4.0"]]
                            :source-paths ["src/cljs" "src/clj" "env/dev/clj"] 
