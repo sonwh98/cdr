@@ -40,11 +40,9 @@
                            :preloads [devtools.preload]}}
                ]}
   
-  :profiles {:project/dev {:dependencies [
-                                          [figwheel-sidecar "0.5.18"]
+  :profiles {:project/dev {:dependencies [[figwheel-sidecar "0.5.18"]
                                           [cider/piggieback "0.4.0"]]
-                           :source-paths ["src/cljs" "src/clj" "env/dev/clj"] 
-                           }
+                           :source-paths ["src/cljs" "src/clj" "env/dev/clj"]}
              :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
                             :source-paths ["src/cljs" "src/clj"]
                             :main cdr.server
