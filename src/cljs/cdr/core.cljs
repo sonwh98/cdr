@@ -205,34 +205,26 @@
                                                              last
                                                              (str/replace ".git" ""))
                                            dir (str "/" repo-name)
-                                           all-files (atom [])]
+                                           dir->files (atom {})]
                                        (reset! project-name repo-name)
-                                       (reset! all-files [])
-                                       
                                        (a/go
                                          (a/<! (git-clone {:url git-url
                                                            :dir dir}))
                                          (a/<! (walk-dir {:dir dir
                                                           :on-file (fn [file]
                                                                      (when-not (re-find #".git" file)
-                                                                       (swap! all-files conj file)))}))
-                                         (let [dir->files (group-by (fn [file]
-                                                                      (let [parts (str/split file #"/")
-                                                                            dir (->>  parts
-                                                                                      butlast
-                                                                                      (str/join "/"))]
-                                                                        dir))
-                                                                    @all-files)
-                                               clj-files (->> dir->files vals  flatten
-                                                              )]
-                                           (prn (keys dir->files))
-                                           (swap! app-state assoc-in [:files] clj-files)
-                                           )
-                                         )))} "GET"]]
-
-      ))
-
-  )
+                                                                       (let [parts (str/split file #"/")
+                                                                             dir (->>  parts
+                                                                                       butlast
+                                                                                       (str/join "/"))]
+                                                                         (swap! dir->files
+                                                                                update-in [dir] conj file))
+                                                                       ))}))
+                                         (let [project-files (->> @dir->files vals  flatten)]
+                                           ;;(prn (keys dir->files))
+                                           (prn @dir->files)
+                                           (swap! app-state assoc-in [:files] project-files))
+                                         )))} "GET"]])))
 
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
