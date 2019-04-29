@@ -80,8 +80,8 @@
                             [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
                             stat (obj->clj stat)]
                         (if (= (stat "type") "dir")
-                          (walk-dir (merge params
-                                           {:dir f-full-path}))
+                          (a/<! (walk-dir (merge params
+                                                 {:dir f-full-path})))
                           (when on-file
                             (on-file f-full-path)))))))))
 
@@ -107,7 +107,8 @@
                                                                              :mode "text/x-clojure"
                                                                              :autoCloseBrackets true
                                                                              :matchBrackets true
-                                                                             ;;:theme "dracula"
+                                                                             :theme "dracula"
+                                                                             :keyMap "emacs"
                                                                              })]
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
@@ -134,6 +135,37 @@
                  :read-only true}]
      [:button "Clear REPL"]]))
 
+(defn stop-propagation [evt]
+  (. evt stopPropagation)  )
+
+(defn stop-prevent [evt]
+  (. evt preventDefault)
+  (. evt stopPropagation))
+
+(defn tree-node-view [node on-click]
+  (let [label (or (:category/name node) (:area/name node) (:group/name node) (:catalog/name node))
+        children (->> node :node/children
+                      (filter #(or (contains? % :category/name)
+                                   (contains? % :area/name)
+                                   ))
+                      (map (fn [node] [tree-node-view node on-click])))
+        id (:system/id node)]
+    [:li {:class "li-tree"}
+     [:label {:class "label-tree" :for id
+              :on-click (fn [evt]
+                          (on-click node)
+                          (stop-prevent evt))} label]
+     [:input {:class "input-tree" :type "checkbox" :id id
+              :on-click stop-propagation}]
+     (into  [:ol {:class "ol-tree"
+                  :on-click stop-propagation}] children)]))
+
+(defn tree [root on-click]
+  [:aside 
+   (into [:ol {:class "tree"}]
+         (for [node (:node/children @root)]
+           [tree-node-view node on-click]))])
+
 (defn file-item [file]
   [:a {:class "mdc-list-item " :tabIndex 0
        :aria-selected "true"
@@ -146,7 +178,7 @@
    [:i {:class "material-icons mdc-list-item__graphic" :aria-hidden "true"} "bookmark"]
    file])
 
-(defn git-clone [{:keys [url dir on-complete]}]
+(defn git-clone [{:keys [url dir]}]
   (a/go
     (a/<! (await (js/window.pfs.mkdir dir)))
     (a/<! (await (js/git.clone #js{:dir dir
@@ -154,10 +186,7 @@
                                    :url url
                                    :ref "master"
                                    :singleBranch true
-                                   :depth 10})))
-    (when on-complete
-      (prn "on-complete")
-      (on-complete))))
+                                   :depth 10})))))
 
 (defn git-input [project-name]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
@@ -176,17 +205,35 @@
                                                              last
                                                              (str/replace ".git" ""))
                                            dir (str "/" repo-name)
-                                           all-files (r/cursor app-state [:files])]
+                                           all-files (atom [])]
                                        (reset! project-name repo-name)
                                        (reset! all-files [])
                                        
                                        (a/go
                                          (a/<! (git-clone {:url git-url
-                                                           :dir dir})                                               )
+                                                           :dir dir}))
                                          (a/<! (walk-dir {:dir dir
                                                           :on-file (fn [file]
                                                                      (when-not (re-find #".git" file)
-                                                                       (swap! all-files conj file)))})))))} "GET"]])))
+                                                                       (swap! all-files conj file)))}))
+                                         (let [dir->files (group-by (fn [file]
+                                                                      (let [parts (str/split file #"/")
+                                                                            dir (->>  parts
+                                                                                      butlast
+                                                                                      (str/join "/"))]
+                                                                        dir))
+                                                                    @all-files)
+                                               clj-files (->> dir->files vals  flatten
+                                                              )]
+                                           (prn (keys dir->files))
+                                           (swap! app-state assoc-in [:files] clj-files)
+                                           )
+                                         )))} "GET"]]
+
+      ))
+
+  )
+
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
                                           (when-let [project-name (:project-name @state)]
