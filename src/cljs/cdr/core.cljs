@@ -178,6 +178,21 @@
    [:i {:class "material-icons mdc-list-item__graphic" :aria-hidden "true"} "bookmark"]
    file])
 
+(defn attach-child-to-parent [parent child]
+  (if-let [first-child (some-> parent :children first)]
+    (assoc parent :children [(attach-child-to-parent first-child child)])
+    (assoc parent :children  [child])))
+
+(defn mkdir [paths]
+  (let [paths (str/split paths #"/")]
+    (reduce (fn [acc path]
+              (if (empty? acc)
+                {:name path
+                 :children []}
+                (attach-child-to-parent acc {:name path})))
+            {}
+            paths)))
+
 (defn git-clone [{:keys [url dir]}]
   (a/go
     (a/<! (await (js/window.pfs.mkdir dir)))
@@ -205,7 +220,9 @@
                                                              last
                                                              (str/replace ".git" ""))
                                            dir (str "/" repo-name)
-                                           dir->files (atom {})]
+                                           dir->files (atom {})
+                                           root (atom {:name "/"
+                                                       :children []})]
                                        (reset! project-name repo-name)
                                        (a/go
                                          (a/<! (git-clone {:url git-url
@@ -213,16 +230,16 @@
                                          (a/<! (walk-dir {:dir dir
                                                           :on-file (fn [file]
                                                                      (when-not (re-find #".git" file)
-                                                                       (let [parts (str/split file #"/")
-                                                                             dir (->>  parts
+                                                                       (let [paths (str/split file #"/")
+                                                                             paths (drop 2 paths)
+                                                                             dir (->>  paths
                                                                                        butlast
                                                                                        (str/join "/"))]
+                                                                         
                                                                          (swap! dir->files
                                                                                 update-in [dir] conj file))
                                                                        ))}))
                                          (let [project-files (->> @dir->files vals  flatten)]
-                                           ;;(prn (keys dir->files))
-                                           (prn @dir->files)
                                            (swap! app-state assoc-in [:files] project-files))
                                          )))} "GET"]])))
 
@@ -315,4 +332,11 @@
                           (if-not (re-find #".git" file)
                             (swap! app-state update-in [:files] conj file)))
                         )})
+
+  (defn in? [e coll]
+    (boolean (some #(= % e) coll)))
+  
+  
+  (mkdir "cdr/src/util/core.cljs")
+  
   )
