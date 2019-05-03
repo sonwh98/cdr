@@ -142,14 +142,10 @@
   (. evt preventDefault)
   (. evt stopPropagation))
 
-(defn tree-node-view [node on-click]
-  (let [label (or (:category/name node) (:area/name node) (:group/name node) (:catalog/name node))
-        children (->> node :node/children
-                      (filter #(or (contains? % :category/name)
-                                   (contains? % :area/name)
-                                   ))
-                      (map (fn [node] [tree-node-view node on-click])))
-        id (:system/id node)]
+(defn tree-node-view [{:keys [label on-click] :as node} ]
+  (let [children (->> node :node/children
+                      (map (fn [node] [tree-node-view node])))
+        id (:node/name node)]
     [:li {:class "li-tree"}
      [:label {:class "label-tree" :for id
               :on-click (fn [evt]
@@ -160,7 +156,7 @@
      (into  [:ol {:class "ol-tree"
                   :on-click stop-propagation}] children)]))
 
-(defn tree [root on-click]
+(defn tree [{:keys [root on-click]}]
   [:aside 
    (into [:ol {:class "tree"}]
          (for [node (:node/children @root)]
@@ -179,17 +175,17 @@
    file])
 
 (defn attach-child-to-parent [parent child]
-  (if-let [first-child (some-> parent :children first)]
-    (assoc parent :children [(attach-child-to-parent first-child child)])
-    (assoc parent :children  [child])))
+  (if-let [first-child (some-> parent :node/children first)]
+    (assoc parent :node/children [(attach-child-to-parent first-child child)])
+    (assoc parent :node/children  [child])))
 
 (defn mkdir [paths]
   (let [paths (str/split paths #"/")]
     (reduce (fn [acc path]
               (if (empty? acc)
-                {:name path
-                 :children []}
-                (attach-child-to-parent acc {:name path})))
+                {:node/name path
+                 :node/children []}
+                (attach-child-to-parent acc {:node/name path})))
             {}
             paths)))
 
