@@ -174,10 +174,10 @@
    [:i {:class "material-icons mdc-list-item__graphic" :aria-hidden "true"} "bookmark"]
    file])
 
-(defn attach-node-to-parent [parent child]
-  (if-let [first-child (some-> parent :node/children first)]
-    (assoc parent :node/children [(attach-node-to-parent first-child child)])
-    (assoc parent :node/children  [child])))
+(defn attach-node-to-parent [parent-node child-node]
+  (if-let [first-child (some-> parent-node :node/children first)]
+    (assoc parent-node :node/children [(attach-node-to-parent first-child child-node)])
+    (assoc parent-node :node/children  [child-node])))
 
 (defn mkdir [paths]
   (let [paths (str/split paths #"/")]
