@@ -180,7 +180,7 @@
     (assoc parent-node :node/children  [child-node])))
 
 (defn mkdir [paths]
-  (let [paths (str/split paths #"/")]
+  (let [paths (rest (str/split paths #"/"))]
     (reduce (fn [root-node path]
               (if (empty? root-node)
                 {:node/name path
@@ -188,6 +188,73 @@
                 (attach-node-to-parent root-node {:node/name path})))
             {}
             paths)))
+
+
+(defn mk-tree [dir-path file-names]
+  (let [paths (rest (str/split dir-path #"/"))
+        last-path (last paths)]
+    (reduce (fn [root-node path]
+              (if (empty? root-node)
+                {:node/name path
+                 :node/children []}
+                (if (= path last-path)
+                  (attach-node-to-parent root-node {:node/name path
+                                                    :node/children file-names})
+                  (attach-node-to-parent root-node {:node/name path}))))
+            {}
+            paths)))
+
+(defn node->path-helper [node path]
+  (if (string? node)
+    path
+    (let [children (:node/children node)
+          path (str path "/" (:node/name node))]
+      (if (> 1 (count children))
+        path
+        (node->path-helper (first children) path)))))
+
+(defn node->path [node]
+  (node->path-helper node ""))
+
+(defn merge-nodes [a b]
+  (merge-with (fn [a b]
+                (if (and (vector? a)
+                         (vector? b))
+                  (update-in a [0 :node/children] into (-> b first :node/children))
+                  b))
+              a
+              b))
+
+(comment
+  (mk-tree "/cdr/src/cljs/cdr" ["core.cljs" "test.cljs" "util.cljs"])
+  
+  (node->path {:node/name "a"
+               :node/children [{:node/name "b"
+                                :node/children [{:node/name "c"}]}]})
+
+  (merge-nodes {:node/name "cdr"
+                :node/children [{:node/name "src"
+                                 :node/children ["foo.cljs"]}]}
+               {:node/name "cdr"
+                :node/children [{:node/name "src"
+                                 :node/children ["core2.cljs"]}]})
+  
+  (merge-with (fn [a b]
+                (if (and (vector? a)
+                         (vector? b))
+                  (update-in a [0 :node/children] conj (-> b first :node/children))
+                  b))
+              {:node/name "cdr"
+               :node/children [{:node/name "src"
+                                :node/children [{:node/name "core.cljs"}]}]}
+              {:node/name "cdr"
+               :node/children [{:node/name "src"
+                                :node/children [{:node/name "core2.cljs"}]}]}
+              
+              )
+
+  (update-in {:node/children []} [:node/children] conj 1)
+  )
 
 (defn git-clone [{:keys [url dir]}]
   (a/go
@@ -227,14 +294,18 @@
                                                           :on-file (fn [file]
                                                                      (when-not (re-find #".git" file)
                                                                        (let [paths (str/split file #"/")
-                                                                             paths (drop 2 paths)
+                                                                             paths (rest paths)
                                                                              dir (->>  paths
                                                                                        butlast
-                                                                                       (str/join "/"))]
-                                                                         
+                                                                                       (str/join "/"))
+                                                                             file (last paths)]
                                                                          (swap! dir->files
                                                                                 update-in [dir] conj file))
                                                                        ))}))
+                                         (doseq [[dir files] @dir->files]
+                                           (prn (mk-tree dir files))
+                                           )
+                                         
                                          (let [project-files (->> @dir->files vals  flatten)]
                                            (swap! app-state assoc-in [:files] project-files))
                                          )))} "GET"]])))
