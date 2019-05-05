@@ -9,6 +9,7 @@
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
             [clojure.string :as str]
+            [clojure.pprint :as pp]
             ))
 
 (def app-state (r/atom {:code-text ""
@@ -191,7 +192,7 @@
 
 
 (defn mk-tree [dir-path file-names]
-  (let [paths (rest (str/split dir-path #"/"))
+  (let [paths (str/split dir-path #"/")
         last-path (last paths)]
     (reduce (fn [root-node path]
               (if (empty? root-node)
@@ -218,6 +219,8 @@
 
 (defn merge-nodes [& nodes]
   (let [merge-fn (fn [a b]
+                   (prn "a=" a)
+                   (prn "b=" b)
                    (if (= a b)
                      a
                      (if (and (vector? a)
@@ -303,8 +306,7 @@
                                                              (str/replace ".git" ""))
                                            dir (str "/" repo-name)
                                            dir->files (atom {})
-                                           root (atom {:name "/"
-                                                       :children []})]
+                                           root (atom {})]
                                        (reset! project-name repo-name)
                                        (a/go
                                          (a/<! (git-clone {:url git-url
@@ -312,21 +314,41 @@
                                          (a/<! (walk-dir {:dir dir
                                                           :on-file (fn [file]
                                                                      (when-not (re-find #".git" file)
+                                                                       ;;(prn file)
                                                                        (let [paths (str/split file #"/")
                                                                              paths (rest paths)
                                                                              dir (->>  paths
                                                                                        butlast
-                                                                                       (str/join "/"))
+                                                                                       vec
+                                                                                       #_(str/join "/"))
                                                                              file (last paths)]
+
                                                                          (swap! dir->files
                                                                                 update-in [dir] conj file))
                                                                        ))}))
-                                         (doseq [[dir files] @dir->files]
-                                           (prn (mk-tree dir files))
-                                           )
-                                         
-                                         (let [project-files (->> @dir->files vals  flatten)]
-                                           (swap! app-state assoc-in [:files] project-files))
+
+                                         #_(let [dirs (->@dir->files keys sort)]
+                                             (prn "dirs=" dirs)
+                                             (doseq [dir-paths dirs]
+                                               (prn "dir-paths=" dir-paths)
+                                               (swap! root (fn [root]
+                                                             (let [dir (get-in root dir-paths)]
+                                                               (if (empty? dir)
+                                                                 (assoc-in root dir-paths [])))
+                                                             ))
+                                               (prn "root2=" @root)
+                                               )
+
+                                             )
+                                         (swap! app-state assoc-in [:files] (vals @dir->files) )
+                                         (pp/pprint @dir->files)
+                                         #_(let [src-trees (for [[dir files] @dir->files]
+                                                             (mk-tree dir files))
+                                                 ;;root-node (apply merge-nodes src-trees)
+                                                 project-files (->> @dir->files vals  flatten)]
+                                             (pp/pprint src-trees)
+                                             ;;(pp/pprint root-node)
+                                             (swap! app-state assoc-in [:files] project-files))
                                          )))} "GET"]])))
 
 (defn cdr-ui [state]
@@ -424,5 +446,102 @@
   
   
   (mkdir "cdr/src/util/core.cljs")
+
+  (def dir->files '{"/cdr/resources/public/css"
+                    ("material-components-web.min.css"
+                     "dracula.css"
+                     "docs.css"
+                     "codemirror.css"),
+                    "/cdr/resources/public/js"
+                    ("clojure.js"
+                     "parinfer.js"
+                     "parinfer-codemirror.js"
+                     "material-components-web.min.js"
+                     "matchbrackets.js"
+                     "lightning-fs.min.js"
+                     "codemirror.js"
+                     "closebrackets.js"
+                     "clojure-parinfer.js"
+                     "active-line.js"),
+                    "/cdr/resources/public" ("index.html"),
+                    "/cdr/src/clj/cdr" ("server.clj"),
+                    "/cdr/src/clj" ("user.clj"),
+                    "/cdr/src/cljs/cdr" ("core.cljs" "mdc.cljs"), 
+                    "/cdr" ("project.clj")})
+
+  (def dir->files '{["cdr" "resources" "public" "css"]
+                    ("material-components-web.min.css"
+                     "dracula.css"
+                     "docs.css"
+                     "codemirror.css"),
+                    ["cdr" "resources" "public" "js"]
+                    ("clojure.js"
+                     "parinfer.js"
+                     "parinfer-codemirror.js"
+                     "material-components-web.min.js"
+                     "matchbrackets.js"
+                     "lightning-fs.min.js"
+                     "codemirror.js"
+                     "closebrackets.js"
+                     "clojure-parinfer.js"
+                     "active-line.js"),
+                    ["cdr" "resources" "public"] ("index.html"),
+                    ["cdr" "src" "clj" "cdr"] ("server.clj"),
+                    ["cdr" "src" "clj"] ("user.clj"),
+                    ["cdr" "src" "cljs" "cdr"] ("core.cljs" "mdc.cljs"),
+                    ["cdr"] ("project.clj")})
+
+  (defn cmp [b a]
+    (let [b-count (count b)
+          a-count (count a)
+          c (if (> b-count a-count)
+              (map (fn [[i a-element]]
+                     (let [b-element (b i)]
+                       (compare b-element a-element)))
+                   (map-indexed (fn [i item] [i item]) a))
+              (map (fn [[i b-element]]
+                     (let [a-element (a i)]
+                       (compare b-element a-element)))
+                   (map-indexed (fn [i item] [i item]) b)))
+          c   (some (fn [v] (if (= 0  v)
+                              0
+                              v
+                              )) c)]
+      (prn "b=" b " a=" a " c=" c)
+      c))
+
+
   
+  (def root (atom {}))
+  (let [dirs (->> dir->files keys (sort cmp))]
+    (doseq [d dirs]
+      (prn d)
+      )
+    )
+  
+  (def css (mk-tree "/cdr/resources/public/css"
+                    '("material-components-web.min.css"
+                      "dracula.css"
+                      "docs.css"
+                      "codemirror.css")))
+
+  (def js (mk-tree "/cdr/resources/public/js"
+                   '("clojure.js"
+                     "parinfer.js"
+                     "parinfer-codemirror.js"
+                     "material-components-web.min.js"
+                     "matchbrackets.js"
+                     "lightning-fs.min.js"
+                     "codemirror.js"
+                     "closebrackets.js"
+                     "clojure-parinfer.js"
+                     "active-line.js")))
+
+  (merge-nodes css js)
+
+  (def a (atom {}))
+
+  (swap! a assoc-in ["cdr" "src" "clj"] ["a.clj"])
+
+  (assoc-in {}  ["cdr" "src" "clj"] [1])
   )
