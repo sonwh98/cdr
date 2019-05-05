@@ -216,14 +216,15 @@
 (defn node->path [node]
   (node->path-helper node ""))
 
-(defn merge-nodes [a b]
-  (merge-with (fn [a b]
-                (if (and (vector? a)
-                         (vector? b))
-                  (update-in a [0 :node/children] into (-> b first :node/children))
-                  b))
-              a
-              b))
+(defn merge-nodes [& nodes]
+  (let [merge-fn (fn [a b]
+                   (if (= a b)
+                     a
+                     (if (and (vector? a)
+                              (vector? b))
+                       (update-in a [0 :node/children] into (-> b first :node/children))
+                       b)))]
+    (apply merge-with (into [merge-fn] nodes))))
 
 (comment
   (mk-tree "/cdr/src/cljs/cdr" ["core.cljs" "test.cljs" "util.cljs"])
@@ -234,16 +235,34 @@
 
   (merge-nodes {:node/name "cdr"
                 :node/children [{:node/name "src"
-                                 :node/children ["foo.cljs"]}]}
+                                 :node/children [{:node/name "clj"
+                                                  :node/children [{:node/name "cdr"
+                                                                   :node/children ["server.clj"]}]}]}]}
                {:node/name "cdr"
                 :node/children [{:node/name "src"
-                                 :node/children ["core2.cljs"]}]})
+                                 :node/children [{:node/name "cljs"
+                                                  :node/children [{:node/name "cdr"
+                                                                   :node/children ["core.cljs" "mdc.cljs"]}]}]}]}
+               {:node/name "cdr"
+                :node/children [{:node/name "resources"
+                                 :node/children [{:node/name "public"
+                                                  :node/children [{:node/name "js"
+                                                                   :node/children ["cdr.js" "codemirrror.js"]}
+                                                                  {:node/name "css"
+                                                                   :node/children ["codemirrror.css"
+                                                                                   "clojure.css"]}]}]}]}
+
+               )
   
   (merge-with (fn [a b]
-                (if (and (vector? a)
-                         (vector? b))
-                  (update-in a [0 :node/children] conj (-> b first :node/children))
-                  b))
+                (prn "a=" a)
+                (prn "b=" b)
+                (if-not (= a b)
+                  (if (and (vector? a)
+                           (vector? b))
+                    (update-in a [0 :node/children] conj (-> b first :node/children))
+                    b)
+                  a))
               {:node/name "cdr"
                :node/children [{:node/name "src"
                                 :node/children [{:node/name "core.cljs"}]}]}
@@ -253,7 +272,7 @@
               
               )
 
-  (update-in {:node/children []} [:node/children] conj 1)
+
   )
 
 (defn git-clone [{:keys [url dir]}]
