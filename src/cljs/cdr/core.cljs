@@ -34,6 +34,18 @@
         (reduce {} (.getKeys goog/object obj)))
     obj))
 
+(defn index-of [v-of-m k]
+  (let [index-key (map-indexed (fn [i m]
+                                 (if (map? m)
+                                   [i (-> m keys first)]
+                                   [i nil]))
+                               v-of-m)
+        found-index-key (filter (fn [[index a-key]]
+                                  (when (= a-key k)
+                                    true))
+                                index-key)]
+    (ffirst found-index-key)))
+
 (defn process-ns! [s-expression]
   (let [ns-form? #(and (list? %)
                        (= 'ns (first %)))
@@ -391,6 +403,25 @@
   (swap! app-state assoc :repl-text msg))
 
 
+(defn cmp [b a]
+  (let [b-count (count b)
+        a-count (count a)
+        c (if (> b-count a-count)
+            (map (fn [[i a-element]]
+                   (let [b-element (b i)]
+                     (compare b-element a-element)))
+                 (map-indexed (fn [i item] [i item]) a))
+            (map (fn [[i b-element]]
+                   (let [a-element (a i)]
+                     (compare b-element a-element)))
+                 (map-indexed (fn [i item] [i item]) b)))
+        c   (some (fn [v] (if (= 0  v)
+                            0
+                            v
+                            )) c)]
+
+    c))
+
 (init)
 
 
@@ -447,27 +478,27 @@
   
   (mkdir "cdr/src/util/core.cljs")
 
-  (def dir->files '{"/cdr/resources/public/css"
-                    ("material-components-web.min.css"
-                     "dracula.css"
-                     "docs.css"
-                     "codemirror.css"),
-                    "/cdr/resources/public/js"
-                    ("clojure.js"
-                     "parinfer.js"
-                     "parinfer-codemirror.js"
-                     "material-components-web.min.js"
-                     "matchbrackets.js"
-                     "lightning-fs.min.js"
-                     "codemirror.js"
-                     "closebrackets.js"
-                     "clojure-parinfer.js"
-                     "active-line.js"),
-                    "/cdr/resources/public" ("index.html"),
-                    "/cdr/src/clj/cdr" ("server.clj"),
-                    "/cdr/src/clj" ("user.clj"),
-                    "/cdr/src/cljs/cdr" ("core.cljs" "mdc.cljs"), 
-                    "/cdr" ("project.clj")})
+  #_(def dir->files '{"/cdr/resources/public/css"
+                      ("material-components-web.min.css"
+                       "dracula.css"
+                       "docs.css"
+                       "codemirror.css"),
+                      "/cdr/resources/public/js"
+                      ("clojure.js"
+                       "parinfer.js"
+                       "parinfer-codemirror.js"
+                       "material-components-web.min.js"
+                       "matchbrackets.js"
+                       "lightning-fs.min.js"
+                       "codemirror.js"
+                       "closebrackets.js"
+                       "clojure-parinfer.js"
+                       "active-line.js"),
+                      "/cdr/resources/public" ("index.html"),
+                      "/cdr/src/clj/cdr" ("server.clj"),
+                      "/cdr/src/clj" ("user.clj"),
+                      "/cdr/src/cljs/cdr" ("core.cljs" "mdc.cljs"), 
+                      "/cdr" ("project.clj")})
 
   (def dir->files '{["cdr" "resources" "public" "css"]
                     ("material-components-web.min.css"
@@ -491,33 +522,85 @@
                     ["cdr" "src" "cljs" "cdr"] ("core.cljs" "mdc.cljs"),
                     ["cdr"] ("project.clj")})
 
-  (defn cmp [b a]
-    (let [b-count (count b)
-          a-count (count a)
-          c (if (> b-count a-count)
-              (map (fn [[i a-element]]
-                     (let [b-element (b i)]
-                       (compare b-element a-element)))
-                   (map-indexed (fn [i item] [i item]) a))
-              (map (fn [[i b-element]]
-                     (let [a-element (a i)]
-                       (compare b-element a-element)))
-                   (map-indexed (fn [i item] [i item]) b)))
-          c   (some (fn [v] (if (= 0  v)
-                              0
-                              v
-                              )) c)]
-      (prn "b=" b " a=" a " c=" c)
-      c))
-
 
   
-  (def root (atom {}))
+  
+
+  (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
+                                             {"js" ["clojure.js" "codemirror.js"]}
+                                             "index.html"]}
+
+                                  ]}
+                    {"src" [{"clj" [{"cdr" ["server.clj"]}]}
+                            {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
+                    "project.clj"
+                    ]})
+  
   (let [dirs (->> dir->files keys (sort cmp))]
-    (doseq [d dirs]
-      (prn d)
+    (doseq [d-paths (take 2 dirs)]
+      (prn "d-paths=" d-paths)
+      (let [path (atom [])]
+        (doseq [p d-paths]
+          (prn "p=" p)
+          (swap! path conj p)
+
+          (prn "path=" @path)
+          #_(swap! root assoc-in @path [])
+
+          ))
       )
     )
+  
+  (index-of (root "cdr") "src")
+  
+  (defn d-get [node path]
+    (let [paths (rest (str/split path #"/"))
+          path-0 (first paths)
+          dir-0 (node path-0)
+          path-1 (second paths)
+          index-1 (index-of dir-0 path-1)]
+      (prn paths)
+      (get-in node [path-0 index-1 path-1])
+      ))
+
+  (d-get root "/cdr/src/cljs/cdr/core.cljs")
+  (get-in root ["cdr" 1 "src" 1 "cljs" 0 "cdr" 0])
+
+  (d-get root "/cdr/src/cljs/cdr/mdc.cljs")
+  (get-in root ["cdr" 1 "src" 1 "cljs" 0 "cdr" 1])
+  
+  (get-in root ["cdr" 1 "src" 0])
+
+  (defn gh [node paths result]
+    (if (empty? paths)
+      result
+      (let [_ (prn "foo1")
+            _ (flush)
+            path-0 (first paths)
+            _ (prn "foo2")
+            path-1 (second paths)
+            _ (prn "foo3")
+            paths (drop 2 paths)
+            _ (prn "paths=" paths)
+            sub-dirs (node path-0)
+            _ (prn "foo3")
+            index-1 (index-of sub-dirs path-1)
+            _ (prn "foo4")
+            path [path-0 index-1]
+            _ (prn "foo5")
+            node (get-in node path)
+            _ (prn "foo6")]
+
+        (gh node paths (concat result
+                               path))
+        )))
+  
+  (defn get-path [node path-str]
+    (let [paths (rest (str/split path-str #"/"))]
+      (prn "haha")
+      (gh node paths [])))
+
+  (get-path root "/cdr/src/cljs/cdr/mdc.cljs")
   
   (def css (mk-tree "/cdr/resources/public/css"
                     '("material-components-web.min.css"
@@ -543,5 +626,4 @@
 
   (swap! a assoc-in ["cdr" "src" "clj"] ["a.clj"])
 
-  (assoc-in {}  ["cdr" "src" "clj"] [1])
-  )
+  (assoc-in {}  ["cdr" "src" "clj"] [1]))
