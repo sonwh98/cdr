@@ -16,8 +16,43 @@
 
 (log/set-level! :info)
 
-(comment
+(defn index-of [v-of-m k]
+  (let [index-key (map-indexed (fn [i m]
+                                 (if (map? m)
+                                   [i (-> m keys first)]
+                                   [i nil]))
+                               v-of-m)
+        found-index-key (filter (fn [[index a-key]]
+                                  (when (= a-key k)
+                                    true))
+                                index-key)]
+    (ffirst found-index-key)))
 
+(defn gh [node paths result]
+  (if (empty? paths)
+    result
+    (let [next-path (first paths)
+          remaining-paths (rest paths)]
+      (prn " node=" node "paths=" paths " result=" result " next-path=" next-path )
+      (cond
+        (empty? result) (let [next-node (node next-path)]
+                          (gh next-node remaining-paths [next-path]))
+        (vector? node) (let [index (index-of node next-path)
+                             next-node (node index)]
+                         (gh next-node remaining-paths (into result [index next-path])))
+        (map? node) (let [last-path (last result)
+                          children (node last-path)
+                          index (index-of children next-path)
+                          next-node (children index)]
+                      (gh next-node remaining-paths (into result [index next-path])))
+        :else (prn "error")))))
+
+(defn get-path [node path-str]
+  (let [paths (clojure.string/split path-str #"/")
+        paths (rest paths)]
+    (gh node paths [])))
+
+(comment
   (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
                                              {"js" ["clojure.js" "codemirror.js"]}
                                              "index.html"]}
@@ -28,48 +63,19 @@
                     "project.clj"
                     ]})
   
-  (defn index-of [v-of-m k]
-    (let [index-key (map-indexed (fn [i m]
-                                   (if (map? m)
-                                     [i (-> m keys first)]
-                                     [i nil]))
-                                 v-of-m)
-          found-index-key (filter (fn [[index a-key]]
-                                    (when (= a-key k)
-                                      true))
-                                  index-key)]
-      (ffirst found-index-key)))
-
-  (defn gh [node paths result]
-    (if (empty? paths)
-      result
-      (let [_ (prn "paths=" paths " result=" result " node=" node)
-            path-0 (first paths)
-            _ (prn "path-0=" path-0)
-            path-1 (second paths)
-            _ (prn "path-1=" path-1)
-            remaining-paths (drop 2 paths)
-            _ (prn "remaining-paths=" remaining-paths)
-            sub-dirs (if (vector? node)
-                       (let [i (index-of node path-0)]
-                         (node i))
-                       (node path-0))
-            _ (prn "sub-dirs=" sub-dirs)
-            index-1 (index-of sub-dirs path-1)
-            _ (prn "index-1=" index-1)
-            path [path-0 index-1 path-1]
-            _ (prn "path=" path)
-            node (get-in node path)
-            _ (prn "node=" node)]
-
-        (gh node remaining-paths (concat result
-                                         path))
-        )))
+  (get-in root (get-path root "/cdr/src"))
+  (get-in root (get-path root "/cdr/resources/public/js"))
+  (get-in root (get-path root "/cdr/resources/public/css/"))
+  (get-in root (get-path root "/cdr/resources/public/index.html"))
+  (get-in root (get-path root "/cdr/src/clj/cdr"))
   
-  (defn get-path [node path-str]
-    (let [paths (rest (clojure.string/split path-str #"/"))]
-      (gh node paths [])))
+  (get-path root "/cdr/resources/public/js")
+  "/cdr/resources/public/js/clojure.js"
+  (get-in root ["cdr" 0 "resources" 0 "public" 1 "js" 0]) 
+  
+  (->> (clojure.string/split "/cdr/resources/public" #"/")
+       (drop 2)
 
-  (get-path root "/cdr/src") ["cdr" 1]
-  (get-path root "/cdr/resources/public") 
+       )
+
   )
