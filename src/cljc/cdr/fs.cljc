@@ -12,7 +12,7 @@
                                 index-key)]
     (ffirst found-index-key)))
 
-(defn gh [node paths result]
+(defn- get-path-helper [node paths result]
   (if (empty? paths)
     result
     (let [next-path (first paths)
@@ -20,21 +20,21 @@
       (prn " node=" node "paths=" paths " result=" result " next-path=" next-path )
       (cond
         (empty? result) (let [next-node (node next-path)]
-                          (gh next-node remaining-paths [next-path]))
+                          (get-path-helper next-node remaining-paths [next-path]))
         (vector? node) (let [index (index-of node next-path)
                              next-node (node index)]
-                         (gh next-node remaining-paths (into result [index next-path])))
+                         (get-path-helper next-node remaining-paths (into result [index next-path])))
         (map? node) (let [last-path (last result)
                           children (node last-path)
                           index (index-of children next-path)
                           next-node (children index)]
-                      (gh next-node remaining-paths (into result [index next-path])))
+                      (get-path-helper next-node remaining-paths (into result [index next-path])))
         :else (prn "error")))))
 
 (defn get-path [node path-str]
   (let [paths (clojure.string/split path-str #"/")
         paths (rest paths)]
-    (gh node paths [])))
+    (get-path-helper node paths [])))
 
 (comment
   (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
