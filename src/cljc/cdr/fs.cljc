@@ -1,4 +1,5 @@
-(ns cdr.fs)
+(ns cdr.fs
+  (:require [clojure.string :as str]))
 
 (defn index-of [v-of-m k]
   (let [index-key (map-indexed (fn [i m]
@@ -17,7 +18,6 @@
     result
     (let [next-path (first paths)
           remaining-paths (rest paths)]
-      (prn " node=" node "paths=" paths " result=" result " next-path=" next-path )
       (cond
         (empty? result) (let [next-node (node next-path)]
                           (get-path-helper next-node remaining-paths [next-path]))
@@ -32,9 +32,26 @@
         :else (prn "error")))))
 
 (defn get-path [node path-str]
-  (let [paths (clojure.string/split path-str #"/")
+  (let [paths (str/split path-str #"/")
         paths (rest paths)]
     (get-path-helper node paths [])))
+
+(defn- map-value->vector [m]
+  (let [k (-> m keys first)
+        v (m k)]
+    (if (map? v)
+      {k [(->v v)]}
+      {k v})))
+
+(defn mk-node [file-path-str]
+  (let [paths (str/split file-path-str #"/")
+        paths (-> paths rest)
+        tree (if (> (count paths) 2)
+               (let [leaf (last paths)
+                     paths (drop-last paths)]
+                 (assoc-in {} paths [leaf]))
+               (assoc-in {} paths []))]
+    (map-value->vector tree)))
 
 (comment
   (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
@@ -50,6 +67,8 @@
   (get-in root (get-path root "/cdr/src"))
   (get-in root (get-path root "/cdr/resources/public/js"))
   (get-in root (get-path root "/cdr/resources/public/css/"))
-  (get-in root (get-path root "/cdr/resources/public/index.html"))
   (get-in root (get-path root "/cdr/src/clj/cdr"))
+
+  (mk-node "/cdr/src/cljc/cd/fs.cljc")
+  (mk-node "/cdr/resources")
   )
