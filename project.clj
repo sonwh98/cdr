@@ -21,7 +21,7 @@
   
   :cljsbuild {:builds
               [{:id "dev"
-                :source-paths ["src/cljs"]
+                :source-paths ["src/cljs" "src/cljc"]
                 :figwheel {:on-jsload "cdr.core/jsload"
                            :websocket-host :js-client-host}
                 :compiler {:main cdr.core
@@ -31,7 +31,7 @@
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
                {:id "min"
-                :source-paths ["src/cljs"]
+                :source-paths ["src/cljs" "src/cljc"]
                 :compiler {:main cdr.core
                            :asset-path "js/compiled/out2"
                            :output-to "resources/public/js/compiled/cdr.js"
@@ -42,9 +42,9 @@
   
   :profiles {:project/dev {:dependencies [[figwheel-sidecar "0.5.18"]
                                           [cider/piggieback "0.4.0"]]
-                           :source-paths ["src/cljs" "src/clj" "env/dev/clj"]}
+                           :source-paths ["src/clj" "src/cljc" "env/dev/clj"]}
              :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
-                            :source-paths ["src/cljs" "src/clj"]
+                            :source-paths ["src/clj" "src/cljc"]
                             :main cdr.server
                             :aot :all}
 
