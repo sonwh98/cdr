@@ -69,6 +69,27 @@
   (get-in root (get-path root "/cdr/resources/public/css/"))
   (get-in root (get-path root "/cdr/src/clj/cdr"))
 
-  (mk-node "/cdr/src/cljc/cd/fs.cljc")
+  (def files ["/cdr/src/cljc/cdr/fs.cljc"
+              "/cdr/src/cljc/cdr/util.cljc"
+              "/cdr/resources/public/js/codemirror.js"
+              "/cdr/resources/public/js/clojure.js"
+              "/cdr/resources/public/js/parinfer.js"
+              "/cdr/resources/public/css/clojure.css"
+              "/cdr/resources/public/css/dark.css"])
+
+  (def n1 (mk-node "/cdr/src/cljc/cdr/fs.cljc"))
+  (def n2 (mk-node "/cdr/src/cljc/cdr/util.cljc"))
+
+  (defn merge-nodes [n1 n2]
+    (prn "n1=" n1)
+    (prn "n2="  n2)
+    (if (and (vector? n1)
+             (vector? n2))
+      
+      )
+    n1)
+  
+  (merge-with merge-nodes n1 n2)
+  
   (mk-node "/cdr/resources")
   )
