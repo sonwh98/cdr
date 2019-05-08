@@ -52,14 +52,4 @@
   (get-in root (get-path root "/cdr/resources/public/css/"))
   (get-in root (get-path root "/cdr/resources/public/index.html"))
   (get-in root (get-path root "/cdr/src/clj/cdr"))
-  
-  (get-path root "/cdr/resources/public/js")
-  "/cdr/resources/public/js/clojure.js"
-  (get-in root ["cdr" 0 "resources" 0 "public" 1 "js" 0]) 
-  
-  (->> (clojure.string/split "/cdr/resources/public" #"/")
-       (drop 2)
-
-       )
-
   )
