@@ -40,7 +40,7 @@
   (let [k (-> m keys first)
         v (m k)]
     (if (map? v)
-      {k [(->v v)]}
+      {k [(map-value->vector v)]}
       {k v})))
 
 (defn mk-node [file-path-str]
