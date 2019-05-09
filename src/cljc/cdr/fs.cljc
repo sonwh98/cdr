@@ -45,19 +45,19 @@
       {k v})))
 
 (defn mk-node
-  ([file-path-str]
-   (let [paths (str/split file-path-str #"/")
-         paths (-> paths rest)
-         tree (if (> (count paths) 2)
-                (let [leaf (last paths)
-                      paths (drop-last paths)]
-                  (assoc-in {} paths [leaf]))
-                (assoc-in {} paths []))]
+  ([dir-path files]
+   (let [dir-path (if (string? dir-path)
+                    (-> dir-path (str/split #"/") rest)
+                    dir-path)
+         tree (assoc-in {} dir-path files)]
      (map-value->vector tree)))
-  ([dir-path-str files]
-   
-   )
-  )
+  ([file-path]
+   (let [file-path (if (string? file-path)
+                     (-> file-path (str/split #"/") rest)
+                     file-path)
+         file (last file-path)
+         dir-path (drop-last file-path)]
+     (mk-node dir-path [file]))))
 
 (defn- node->path-helper [node path]
   (cond
@@ -78,6 +78,22 @@
 (defn node->path-str [node]
   (let [path (node->path node)]
     (str "/" (str/join "/" path))))
+
+(defn- merge-node-helper [n1 n2]
+  (if (and (vector? n1)
+           (vector? n2))
+    (let [p1 (node->path n1)
+          p2 (node->path n2)
+          s1 (set p1)
+          s2 (set p2)
+          common (vec (s/intersection s1 s2))
+          different (vec (into (s/difference s1 s2)
+                               (s/difference s2 s1)))]
+      (mk-node common different))
+    n1))
+
+(defn merge-nodes [n1 n2]
+  (merge-with merge-node-helper n1 n2))
 
 (comment
   (def n {"cdr" [{"src" ["clojure.clj"]}]})
@@ -108,22 +124,13 @@
 
   (def n1 (mk-node "/cdr/src/cljc/cdr/fs.cljc"))
   (def n2 (mk-node "/cdr/src/cljc/cdr/util.cljc"))
+  (def n2a (mk-node "/cdr/src/cljc/cdr" ["foo.cljc" "bar.cljc"]))
 
-  (defn merge-nodes [n1 n2]
-    
-    (if (and (vector? n1)
-             (vector? n2))
-      (let [p1 (node->path n1)
-            p2 (node->path n2)
-            common (vec (s/intersection (set p1) (set p2)))]
-        (prn common)
-        
-        )
-      
-      
-      n1))
+  (mk-node ["cdr" "src" "cljc" "cdr" "fs.cljc"])
+  (mk-node ["cdr" "src" "cljc" "cdr"] ["fs.cljc" "bar.cljc"])
+  (mk-node "/cdr/src/cljc/cdr" ["fs.cljc" "bar.cljc"])
   
-  (def n3 (merge-with merge-nodes n1 n2))
+  (def n3 (merge-nodes n1 n2))
   (node->path n2)
   (node->path-str n2)
   
