@@ -1,5 +1,6 @@
 (ns cdr.fs
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.set :as s]))
 
 (defn index-of [v-of-m k]
   (let [index-key (map-indexed (fn [i m]
@@ -43,17 +44,45 @@
       {k [(map-value->vector v)]}
       {k v})))
 
-(defn mk-node [file-path-str]
-  (let [paths (str/split file-path-str #"/")
-        paths (-> paths rest)
-        tree (if (> (count paths) 2)
-               (let [leaf (last paths)
-                     paths (drop-last paths)]
-                 (assoc-in {} paths [leaf]))
-               (assoc-in {} paths []))]
-    (map-value->vector tree)))
+(defn mk-node
+  ([file-path-str]
+   (let [paths (str/split file-path-str #"/")
+         paths (-> paths rest)
+         tree (if (> (count paths) 2)
+                (let [leaf (last paths)
+                      paths (drop-last paths)]
+                  (assoc-in {} paths [leaf]))
+                (assoc-in {} paths []))]
+     (map-value->vector tree)))
+  ([dir-path-str files]
+   
+   )
+  )
+
+(defn- node->path-helper [node path]
+  (cond
+    (map? node) (let [k (-> node keys first)
+                      v (node k)
+                      new-path (conj path k)]
+                  (node->path-helper v new-path))
+    (and (vector? node)
+         (-> node first map?)) (let [a-map (first node)]
+                                 (node->path-helper a-map path))
+    (vector? node) (let [p (first node)]
+                     (conj path p))
+    :else path))
+
+(defn node->path [node]
+  (node->path-helper node []))
+
+(defn node->path-str [node]
+  (let [path (node->path node)]
+    (str "/" (str/join "/" path))))
 
 (comment
+  (def n {"cdr" [{"src" ["clojure.clj"]}]})
+  (node->path n)
+  
   (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
                                              {"js" ["clojure.js" "codemirror.js"]}
                                              "index.html"]}
@@ -81,15 +110,23 @@
   (def n2 (mk-node "/cdr/src/cljc/cdr/util.cljc"))
 
   (defn merge-nodes [n1 n2]
-    (prn "n1=" n1)
-    (prn "n2="  n2)
+    
     (if (and (vector? n1)
              (vector? n2))
+      (let [p1 (node->path n1)
+            p2 (node->path n2)
+            common (vec (s/intersection (set p1) (set p2)))]
+        (prn common)
+        
+        )
       
-      )
-    n1)
+      
+      n1))
   
-  (merge-with merge-nodes n1 n2)
+  (def n3 (merge-with merge-nodes n1 n2))
+  (node->path n2)
+  (node->path-str n2)
   
   (mk-node "/cdr/resources")
+  (s/intersection #{1 3} #{1 2})
   )
