@@ -1,6 +1,7 @@
 (ns cdr.fs
   (:require [clojure.string :as str]
-            [clojure.set :as s]))
+            [clojure.set :as s]
+            [clojure.data :as d]))
 
 (defn index-of [v-of-m k]
   (let [index-key (map-indexed (fn [i m]
@@ -32,10 +33,11 @@
                       (get-path-helper next-node remaining-paths (into result [index next-path])))
         :else (prn "error")))))
 
-(defn get-path [node path-str]
-  (let [paths (str/split path-str #"/")
-        paths (rest paths)]
-    (get-path-helper node paths [])))
+(defn get-path [node path]
+  (let [path (if (string? path)
+               (-> path (str/split #"/") rest)
+               path)]
+    (get-path-helper node path [])))
 
 (defn- map-value->vector [m]
   (let [k (-> m keys first)
@@ -80,16 +82,33 @@
     (str "/" (str/join "/" path))))
 
 (defn- merge-node-helper [n1 n2]
+  (prn "n1=" n1)
+  (prn "n2=" n2)
+
   (if (and (vector? n1)
            (vector? n2))
-    (let [p1 (node->path n1)
-          p2 (node->path n2)
-          s1 (set p1)
-          s2 (set p2)
-          common (vec (s/intersection s1 s2))
-          different (vec (into (s/difference s1 s2)
-                               (s/difference s2 s1)))]
-      (mk-node common different))
+    (let [a (node->path n1)
+          b (node->path n2)
+          [a-only b-only both-a-b] (d/diff a b)
+          common both-a-b
+          path (get-path (first n1) common)
+          _ (prn "path=" path)
+          union (->> (concat a-only b-only)
+                     (remove nil?)
+                     vec)
+          _ (prn "union a b=" union)
+          a-children (get-in (first n1)
+                             path)
+          difference (->> (concat a-children b-only)
+                          (remove nil?)
+                          vec)
+          merged-node (mk-node common difference)]
+      (prn "a=" a)
+      (prn "b=" b)
+      (prn "common=" common)
+      (prn "a-children=" a-children)
+      (prn "difference=" difference)
+      [merged-node])
     n1))
 
 (defn merge-nodes [n1 n2]
@@ -108,6 +127,8 @@
                             {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
                     "project.clj"
                     ]})
+  (get-path {"resources" [{"public" [{"css" ["codemirror.css" "docs.css"]}]}]}
+            ["resources" "public" "css"])
   
   (get-in root (get-path root "/cdr/src"))
   (get-in root (get-path root "/cdr/resources/public/js"))
@@ -122,8 +143,10 @@
               "/cdr/resources/public/css/clojure.css"
               "/cdr/resources/public/css/dark.css"])
 
-  (def n1 (mk-node "/cdr/src/cljc/cdr/fs.cljc"))
-  (def n2 (mk-node "/cdr/src/cljc/cdr/util.cljc"))
+  (def n1 (mk-node "/cdr/resources/pubic/css/codemirror.css"))
+  (def n2 (mk-node "/cdr/resources/pubic/css/doc.css"))
+  (d/diff n1 n2)
+  (def n3  (merge-nodes n1 n2))
   (def n2a (mk-node "/cdr/src/cljc/cdr" ["foo.cljc" "bar.cljc"]))
 
   (mk-node ["cdr" "src" "cljc" "cdr" "fs.cljc"])
@@ -134,6 +157,47 @@
   (node->path n2)
   (node->path-str n2)
   
-  (mk-node "/cdr/resources")
-  (s/intersection #{1 3} #{1 2})
+  (def nodes [{"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" ]}]}]}]}
+              #_{"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
+              #_{"cdr" [{"resources" [{"public" [{"css" ["dracula.css"]}]}]}]}
+              #_{"cdr"
+                 [{"resources"
+                   [{"public" [{"css" ["material-components-web.min.css"]}]}]}]}
+              {"cdr" [{"resources" [{"public" [{"js" ["active-line.js"]}]}]}]}
+              ])
+
+  (reduce (fn [root node]
+            (merge-nodes root node)
+            )
+          nodes
+          )
+
+  (get-in (nodes 0)
+          (get-path (nodes 0) "/cdr/resources/public/css/"))
+  
+  ({"cdr" [{"resources" [{"public" [{"css" ["codemirror.css"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"css" ["dracula.css"]}]}]}]}
+   {"cdr"
+    [{"resources"
+      [{"public" [{"css" ["material-components-web.min.css"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["active-line.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["clojure-parinfer.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["closebrackets.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["codemirror.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["lightning-fs.min.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["matchbrackets.js"]}]}]}]}
+   {"cdr"
+    [{"resources"
+      [{"public" [{"js" ["material-components-web.min.js"]}]}]}]}
+   {"cdr"
+    [{"resources" [{"public" [{"js" ["parinfer-codemirror.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["parinfer.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["clojure.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" ["index.html"]}]}]}
+   {"cdr" [{"src" [{"clj" [{"cdr" ["server.clj"]}]}]}]}
+   {"cdr" [{"src" [{"clj" ["user.clj"]}]}]}
+   {"cdr" [{"src" [{"cljs" [{"cdr" ["mdc.cljs"]}]}]}]}
+   {"cdr" [{"src" [{"cljs" [{"cdr" ["core.cljs"]}]}]}]}
+   {"cdr" ["project.clj"]})
   )
