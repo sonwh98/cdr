@@ -5,12 +5,13 @@
             [taoensso.timbre :as log :include-macros true]
             [reagent.core :as r]
             [cdr.mdc :as mdc]
+            [cdr.fs :as fs]
+            [cdr.util :as util]
             ;;[stigmergy.mr-clean :as r]
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
             [clojure.string :as str]
-            [clojure.pprint :as pp]
-            ))
+            [clojure.pprint :as pp]))
 
 (def app-state (r/atom {:code-text ""
                         :repl-text ""
@@ -19,32 +20,7 @@
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
 
-(defn array-buffer->str [array-buffer]
-  (let [decoder (js/TextDecoder. "UTF-8")]
-    (.. decoder (decode array-buffer))))
 
-(defn obj->clj
-  [obj]
-  (if (goog.isObject obj)
-    (-> (fn [result key]
-          (let [v (goog.object/get obj key)]
-            (if (= "function" (goog/typeOf v))
-              result
-              (assoc result key (obj->clj v)))))
-        (reduce {} (.getKeys goog/object obj)))
-    obj))
-
-(defn index-of [v-of-m k]
-  (let [index-key (map-indexed (fn [i m]
-                                 (if (map? m)
-                                   [i (-> m keys first)]
-                                   [i nil]))
-                               v-of-m)
-        found-index-key (filter (fn [[index a-key]]
-                                  (when (= a-key k)
-                                    true))
-                                index-key)]
-    (ffirst found-index-key)))
 
 (defn process-ns! [s-expression]
   (let [ns-form? #(and (list? %)
@@ -91,24 +67,12 @@
                     (doseq [f files]
                       (let [f-full-path (str dir "/" f)
                             [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
-                            stat (obj->clj stat)]
+                            stat (util/obj->clj stat)]
                         (if (= (stat "type") "dir")
                           (a/<! (walk-dir (merge params
                                                  {:dir f-full-path})))
                           (when on-file
                             (on-file f-full-path)))))))))
-
-
-(comment
-  (a/go (let [;;expr '(ns foo.bar)
-              expr '(defn hello [n] (str "hello " n))
-              r (async-eval expr)]
-          (prn "r=" (a/<! r))))
-
-  (-> @cljs-state keys)
-  (-> @cljs-state :cljs.analyzer/namespaces keys)
-  
-  )
 
 (defn code-area [state]
   (let [code-text (r/cursor state [:code-text])
@@ -182,7 +146,7 @@
                         cm (.. cm -CodeMirror)]
                     (a/go
                       (let [[err file-content] (a/<! (await (js/window.pfs.readFile file)))
-                            file-content (array-buffer->str file-content)]
+                            file-content (util/array-buffer->str file-content)]
                         (.. cm getDoc (setValue file-content)))))}
    [:i {:class "material-icons mdc-list-item__graphic" :aria-hidden "true"} "bookmark"]
    file])
@@ -201,94 +165,6 @@
                 (attach-node-to-parent root-node {:node/name path})))
             {}
             paths)))
-
-
-(defn mk-tree [dir-path file-names]
-  (let [paths (str/split dir-path #"/")
-        last-path (last paths)]
-    (reduce (fn [root-node path]
-              (if (empty? root-node)
-                {:node/name path
-                 :node/children []}
-                (if (= path last-path)
-                  (attach-node-to-parent root-node {:node/name path
-                                                    :node/children file-names})
-                  (attach-node-to-parent root-node {:node/name path}))))
-            {}
-            paths)))
-
-(defn node->path-helper [node path]
-  (if (string? node)
-    path
-    (let [children (:node/children node)
-          path (str path "/" (:node/name node))]
-      (if (> 1 (count children))
-        path
-        (node->path-helper (first children) path)))))
-
-(defn node->path [node]
-  (node->path-helper node ""))
-
-(defn merge-nodes [& nodes]
-  (let [merge-fn (fn [a b]
-                   (prn "a=" a)
-                   (prn "b=" b)
-                   (if (= a b)
-                     a
-                     (if (and (vector? a)
-                              (vector? b))
-                       (update-in a [0 :node/children] into (-> b first :node/children))
-                       b)))]
-    (apply merge-with (into [merge-fn] nodes))))
-
-(comment
-  (mk-tree "/cdr/src/cljs/cdr" ["core.cljs" "test.cljs" "util.cljs"])
-  
-  (node->path {:node/name "a"
-               :node/children [{:node/name "b"
-                                :node/children [{:node/name "c"}]}]})
-
-  (merge-nodes {:node/name "cdr"
-                :node/children [{:node/name "src"
-                                 :node/children [{:node/name "clj"
-                                                  :node/children [{:node/name "cdr"
-                                                                   :node/children ["server.clj"]}]}]}]}
-               {:node/name "cdr"
-                :node/children [{:node/name "src"
-                                 :node/children [{:node/name "cljs"
-                                                  :node/children [{:node/name "cdr"
-                                                                   :node/children ["core.cljs" "mdc.cljs"]}]}]}]}
-               {:node/name "cdr"
-                :node/children [{:node/name "resources"
-                                 :node/children [{:node/name "public"
-                                                  :node/children [{:node/name "js"
-                                                                   :node/children ["cdr.js" "codemirrror.js"]}
-                                                                  {:node/name "css"
-                                                                   :node/children ["codemirrror.css"
-                                                                                   "clojure.css"]}]}]}]}
-
-               )
-  
-  (merge-with (fn [a b]
-                (prn "a=" a)
-                (prn "b=" b)
-                (if-not (= a b)
-                  (if (and (vector? a)
-                           (vector? b))
-                    (update-in a [0 :node/children] conj (-> b first :node/children))
-                    b)
-                  a))
-              {:node/name "cdr"
-               :node/children [{:node/name "src"
-                                :node/children [{:node/name "core.cljs"}]}]}
-              {:node/name "cdr"
-               :node/children [{:node/name "src"
-                                :node/children [{:node/name "core2.cljs"}]}]}
-              
-              )
-
-
-  )
 
 (defn git-clone [{:keys [url dir]}]
   (a/go
@@ -317,8 +193,7 @@
                                                              last
                                                              (str/replace ".git" ""))
                                            dir (str "/" repo-name)
-                                           dir->files (atom {})
-                                           root (atom {})]
+                                           files (atom [])]
                                        (reset! project-name repo-name)
                                        (a/go
                                          (a/<! (git-clone {:url git-url
@@ -326,41 +201,14 @@
                                          (a/<! (walk-dir {:dir dir
                                                           :on-file (fn [file]
                                                                      (when-not (re-find #".git" file)
-                                                                       ;;(prn file)
-                                                                       (let [paths (str/split file #"/")
-                                                                             paths (rest paths)
-                                                                             dir (->>  paths
-                                                                                       butlast
-                                                                                       vec
-                                                                                       #_(str/join "/"))
-                                                                             file (last paths)]
-
-                                                                         (swap! dir->files
-                                                                                update-in [dir] conj file))
+                                                                       (swap! files conj file)
+                                                                       ;;(prn (fs/mk-node file))
                                                                        ))}))
-
-                                         #_(let [dirs (->@dir->files keys sort)]
-                                             (prn "dirs=" dirs)
-                                             (doseq [dir-paths dirs]
-                                               (prn "dir-paths=" dir-paths)
-                                               (swap! root (fn [root]
-                                                             (let [dir (get-in root dir-paths)]
-                                                               (if (empty? dir)
-                                                                 (assoc-in root dir-paths [])))
-                                                             ))
-                                               (prn "root2=" @root)
-                                               )
-
-                                             )
-                                         (swap! app-state assoc-in [:files] (vals @dir->files) )
-                                         (pp/pprint @dir->files)
-                                         #_(let [src-trees (for [[dir files] @dir->files]
-                                                             (mk-tree dir files))
-                                                 ;;root-node (apply merge-nodes src-trees)
-                                                 project-files (->> @dir->files vals  flatten)]
-                                             (pp/pprint src-trees)
-                                             ;;(pp/pprint root-node)
-                                             (swap! app-state assoc-in [:files] project-files))
+                                         (swap! app-state assoc-in [:files] @files)
+                                         (let [project-tree (fs/mk-project-tree @files)]
+                                           (pp/pprint project-tree)
+                                           ;;(pp/pprint nodes)
+                                           )
                                          )))} "GET"]])))
 
 (defn cdr-ui [state]
@@ -626,4 +474,31 @@
 
   (swap! a assoc-in ["cdr" "src" "clj"] ["a.clj"])
 
-  (assoc-in {}  ["cdr" "src" "clj"] [1]))
+  (assoc-in {}  ["cdr" "src" "clj"] [1])
+
+  ({"cdr" [{"resources" [{"public" [{"css" ["codemirror.css"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"css" ["dracula.css"]}]}]}]}
+   {"cdr"
+    [{"resources"
+      [{"public" [{"css" ["material-components-web.min.css"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["active-line.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["clojure-parinfer.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["closebrackets.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["codemirror.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["lightning-fs.min.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["matchbrackets.js"]}]}]}]}
+   {"cdr"
+    [{"resources"
+      [{"public" [{"js" ["material-components-web.min.js"]}]}]}]}
+   {"cdr"
+    [{"resources" [{"public" [{"js" ["parinfer-codemirror.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["parinfer.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" [{"js" ["clojure.js"]}]}]}]}
+   {"cdr" [{"resources" [{"public" ["index.html"]}]}]}
+   {"cdr" [{"src" [{"clj" [{"cdr" ["server.clj"]}]}]}]}
+   {"cdr" [{"src" [{"clj" ["user.clj"]}]}]}
+   {"cdr" [{"src" [{"cljs" [{"cdr" ["mdc.cljs"]}]}]}]}
+   {"cdr" [{"src" [{"cljs" [{"cdr" ["core.cljs"]}]}]}]}
+   {"cdr" ["project.clj"]})
+  )
