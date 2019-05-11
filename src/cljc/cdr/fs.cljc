@@ -100,27 +100,17 @@
 (defn attach [node paths]
   (let [p (first paths)
         remaining-paths (-> paths rest vec)]
-    (prn "node=" node)
-    (prn "paths=" paths)
-    (prn "p=" p)
-    (prn "remaining=" remaining-paths)
-
     (cond
       (empty? node) (mk-node paths)
       (map? node) (if (contains? node p)
                     (let [sub-node (node p)
-                          _ (prn "foo sub-node=" sub-node)
-                          sub-node1 (attach sub-node remaining-paths)]
-                      (prn "foo node=" node)
-                      (prn "foo sub-node1=" sub-node1)
-                      (if (vector? sub-node1)
-                        (assoc node p sub-node1)
-                        (assoc node p [sub-node1])))
+                          sub-node (attach sub-node remaining-paths)]
+                      (if (vector? sub-node)
+                        (assoc node p sub-node)
+                        (assoc node p [sub-node])))
                     (assoc node p [(mk-node remaining-paths)]))
       (vector? node) (if (empty? remaining-paths)
-                       (let [r  (conj node p)]
-                         (prn "last node=" node " p=" p " r=" r)
-                         r)
+                       (conj node p)
                        (let [vector-of-nodes node
                              found-node (->> vector-of-nodes
                                              (filter #(contains? % p))
@@ -128,31 +118,16 @@
                              without-found-node (->> vector-of-nodes
                                                      (remove #(contains? % p))
                                                      vec)]
-                         (prn "vector-of-nodes=" vector-of-nodes)
-                         (prn "found-node=" found-node)
-                         (prn "without-found-node=" without-found-node)
                          (if found-node
                            (let [sub-node (found-node p)
-                                 _ (prn "sub-node=" sub-node)
                                  new-sub-node (attach sub-node remaining-paths)]
-                             (prn "new-sub-node=" new-sub-node)
                              (if (vector? new-sub-node)
-                               (let [r (assoc found-node p
-                                              new-sub-node)
-                                     r2 (conj without-found-node r)]
-                                 (prn "haha r=" r)
-                                 (prn "haha r2=" r2)
-                                 r2
-                                 )
-                               (let [b (assoc found-node p
-                                              [new-sub-node])]
-                                 (prn "baba b=" b)
-                                 b)))
-                           (let [new-node (mk-node paths)
-                                 r (conj node new-node)]
-                             (prn "new-node=" new-node)
-                             (prn "r=" r)
-                             r))))
+                               (conj without-found-node
+                                     (assoc found-node p
+                                            new-sub-node))
+                               (assoc found-node p
+                                      [new-sub-node])))
+                           (conj node (mk-node paths)))))
       :else node)))
 
 (defn mk-project-tree [files]
@@ -161,7 +136,6 @@
                     files)]
     (reduce attach
             {}
-            ;;{"cdr" [{"src" [{"cljc" [{"cdr" ["fs.cljc"]}]}]} {"resources" ["dark.css"]}]}
             paths)))
 
 (comment
