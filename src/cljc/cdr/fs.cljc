@@ -108,9 +108,13 @@
     (cond
       (empty? node) (mk-node paths)
       (map? node) (if (contains? node p)
-                    (let [children-vec (node p)]
-                      (prn "children-vec=" children-vec)
-                      (assoc node p [(attach children-vec remaining-paths)]))
+                    (let [sub-node (node p)
+                          sub-node1 (attach sub-node remaining-paths)]
+                      (prn "sub-node=" sub-node)
+                      (prn "sub-node1=" sub-node1)
+                      (if (vector? sub-node1)
+                        (assoc node p sub-node1)
+                        (assoc node p [sub-node1])))
                     (assoc node p [(mk-node remaining-paths)]))
       (vector? node) (if (empty? remaining-paths)
                        (let [r  (conj node p)]
@@ -135,7 +139,7 @@
                                       new-sub-node)
                                (assoc found-node p
                                       [new-sub-node])))
-                           (let [new-node (mk-node remaining-paths)]
+                           (let [new-node (mk-node paths)]
                              (prn "new-node=" new-node)
                              (conj vector-of-nodes new-node)))))
       :else node)))
@@ -170,9 +174,9 @@
     "project.clj"]}
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              "/cdr/src/cljc/cdr/util.cljc"
-              "/cdr/src/cljc/cdr/foobar.cljc"
-              ;;"/cdr/resources/public/js/codemirror.js"
+              ;; "/cdr/src/cljc/cdr/util.cljc"
+              ;; "/cdr/src/cljc/cdr/foobar.cljc"
+              "/cdr/resources/public"
               ;; "/cdr/resources/public/js/clojure.js"
               ;; "/cdr/resources/public/js/parinfer.js"
               ;; "/cdr/resources/public/css/clojure.css"
@@ -188,6 +192,10 @@
             paths)
     )
 
+  {"cdr"
+   [{"src" [{"cljc" [{"cdr" ["fs.cljc"]}]}]}
+    {"resources" ["public"]}]}
+  
   (node->path {"cdr"
                [{"src" [{"cljc" [{"cdr" ["fs.cljc" "util.cljc" "foobar.cljc"]}]}]}]})
   
