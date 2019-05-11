@@ -14,3 +14,6 @@
               (assoc result key (obj->clj v)))))
         (reduce {} (.getKeys goog/object obj)))
     obj))
+
+(defn in? [e coll]
+  (boolean (some #(= % e) coll)))

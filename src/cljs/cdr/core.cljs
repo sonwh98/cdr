@@ -7,6 +7,7 @@
             [cdr.mdc :as mdc]
             [cdr.fs :as fs]
             [cdr.util :as util]
+            [cdr.git :as git]
             ;;[stigmergy.mr-clean :as r]
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
@@ -59,18 +60,7 @@
                                         ))))
                     c)))
 
-(def walk-dir (fn [{:keys [dir on-file] :as params}]
-                (a/go
-                  (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
-                    (doseq [f files]
-                      (let [f-full-path (str dir "/" f)
-                            [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
-                            stat (util/obj->clj stat)]
-                        (if (= (stat "type") "dir")
-                          (a/<! (walk-dir (merge params
-                                                 {:dir f-full-path})))
-                          (when on-file
-                            (on-file f-full-path)))))))))
+
 
 (defn code-area [state]
   (let [code-text (r/cursor state [:code-text])
@@ -154,26 +144,6 @@
     (assoc parent-node :node/children [(attach-node-to-parent first-child child-node)])
     (assoc parent-node :node/children  [child-node])))
 
-(defn mkdir [paths]
-  (let [paths (rest (str/split paths #"/"))]
-    (reduce (fn [root-node path]
-              (if (empty? root-node)
-                {:node/name path
-                 :node/children []}
-                (attach-node-to-parent root-node {:node/name path})))
-            {}
-            paths)))
-
-(defn git-clone [{:keys [url dir]}]
-  (a/go
-    (a/<! (await (js/window.pfs.mkdir dir)))
-    (a/<! (await (js/git.clone #js{:dir dir
-                                   :corsProxy "https://cors.isomorphic-git.org"
-                                   :url url
-                                   :ref "master"
-                                   :singleBranch true
-                                   :depth 10})))))
-
 (defn git-input [project-name]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
     (fn [project-name]
@@ -194,14 +164,14 @@
                                            files (atom [])]
                                        (reset! project-name repo-name)
                                        (a/go
-                                         (a/<! (git-clone {:url git-url
+                                         (a/<! (git/clone {:url git-url
                                                            :dir dir}))
-                                         (a/<! (walk-dir {:dir dir
-                                                          :on-file (fn [file]
-                                                                     (when-not (re-find #".git" file)
-                                                                       (swap! files conj file)
-                                                                       ;;(prn (fs/mk-node file))
-                                                                       ))}))
+                                         (a/<! (fs/walk-dir {:dir dir
+                                                             :on-file (fn [file]
+                                                                        (when-not (re-find #".git" file)
+                                                                          (swap! files conj file)
+                                                                          ;;(prn (fs/mk-node file))
+                                                                          ))}))
                                          (swap! app-state assoc-in [:files] @files)
                                          (let [project-tree (fs/mk-project-tree @files)]
                                            (pp/pprint project-tree)
@@ -212,11 +182,11 @@
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
                                           (when-let [project-name (:project-name @state)]
-                                            (walk-dir {:dir (str "/" project-name)
-                                                       :on-file (fn [file]
-                                                                  (if-not (re-find #".git" file)
-                                                                    (swap! state update-in [:files] conj file))
-                                                                  )}))               
+                                            (fs/walk-dir {:dir (str "/" project-name)
+                                                          :on-file (fn [file]
+                                                                     (if-not (re-find #".git" file)
+                                                                       (swap! state update-in [:files] conj file))
+                                                                     )}))               
                                           )
                    
                    :reagent-render (fn [state]
@@ -299,52 +269,6 @@
       (prn err)
       (prn files)
       ))
-
-
-  (git-clone {:url "https://github.com/sonwh98/cdr.git"
-              :dir "/cdr" })
-  
-  (walk-dir {:dir "/cdr"
-             :on-file (fn [files]
-                        (prn "f=" files)
-                        )})
-
-
-  
-  (walk-dir {:dir (str "/" )
-             :on-file (fn [file]
-                        (let [file (str/replace file #"/cdr2/" "")]
-                          (if-not (re-find #".git" file)
-                            (swap! app-state update-in [:files] conj file)))
-                        )})
-
-  (defn in? [e coll]
-    (boolean (some #(= % e) coll)))
-  
-  
-  (mkdir "cdr/src/util/core.cljs")
-
-  #_(def dir->files '{"/cdr/resources/public/css"
-                      ("material-components-web.min.css"
-                       "dracula.css"
-                       "docs.css"
-                       "codemirror.css"),
-                      "/cdr/resources/public/js"
-                      ("clojure.js"
-                       "parinfer.js"
-                       "parinfer-codemirror.js"
-                       "material-components-web.min.js"
-                       "matchbrackets.js"
-                       "lightning-fs.min.js"
-                       "codemirror.js"
-                       "closebrackets.js"
-                       "clojure-parinfer.js"
-                       "active-line.js"),
-                      "/cdr/resources/public" ("index.html"),
-                      "/cdr/src/clj/cdr" ("server.clj"),
-                      "/cdr/src/clj" ("user.clj"),
-                      "/cdr/src/cljs/cdr" ("core.cljs" "mdc.cljs"), 
-                      "/cdr" ("project.clj")})
 
   (def dir->files '{["cdr" "resources" "public" "css"]
                     ("material-components-web.min.css"

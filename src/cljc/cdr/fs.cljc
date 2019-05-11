@@ -1,7 +1,24 @@
 (ns cdr.fs
   (:require [clojure.string :as str]
             [clojure.set :as s]
-            [clojure.data :as d]))
+            [clojure.data :as d]
+            [clojure.core.async :as a :include-macros true]
+            [cljs-await.core :refer [await]]
+            [cdr.util :as util]
+            ))
+
+(def walk-dir (fn [{:keys [dir on-file] :as params}]
+                (a/go
+                  (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
+                    (doseq [f files]
+                      (let [f-full-path (str dir "/" f)
+                            [err stat] (a/<! (await (js/window.pfs.stat f-full-path)))
+                            stat (util/obj->clj stat)]
+                        (if (= (stat "type") "dir")
+                          (a/<! (walk-dir (merge params
+                                                 {:dir f-full-path})))
+                          (when on-file
+                            (on-file f-full-path)))))))))
 
 (defn index-of [v-of-m k]
   (let [index-key (map-indexed (fn [i m]
