@@ -128,7 +128,6 @@
                                                      (remove #(contains? % p)))]
                          (prn "vector-of-nodes=" vector-of-nodes)
                          (prn "found-node=" found-node)
-
                          (if found-node
                            (let [sub-node (found-node p)
                                  new-sub-node (attach sub-node remaining-paths)]
@@ -144,7 +143,13 @@
                              (conj vector-of-nodes new-node)))))
       :else node)))
 
-
+(defn mk-project-tree [files]
+  (let [paths (mapv (fn [f]
+                      (-> f (str/split #"/") rest vec))
+                    files)]
+    (reduce attach
+            {}
+            paths)))
 
 (comment
   (def n {"cdr" [{"src" ["clojure.clj"]}]})
@@ -167,31 +172,20 @@
   (get-in root (get-path root "/cdr/resources/public/css/"))
   (get-in root (get-path root "/cdr/src/clj/cdr"))
 
-  {"cdr"
-   [{"src"
-     [{"clj" [{"cdr" ["server.clj"]}]}
-      {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
-    "project.clj"]}
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              ;; "/cdr/src/cljc/cdr/util.cljc"
+              "/cdr/src/cljc/cdr/util.cljc"
               ;; "/cdr/src/cljc/cdr/foobar.cljc"
-              "/cdr/resources/public"
               ;; "/cdr/resources/public/js/clojure.js"
               ;; "/cdr/resources/public/js/parinfer.js"
-              ;; "/cdr/resources/public/css/clojure.css"
-              ;; "/cdr/resources/public/css/dark.css"
+              "/cdr/resources/public/css/clojure.css"
+              ;;"/cdr/resources/public/css/dark.css"
               ])
 
-  (let [paths (mapv (fn [f]
-                      (-> f (str/split #"/") rest vec))
-                    files)]
-    (prn paths)
-    (reduce attach
-            {}
-            paths)
-    )
+  
 
+  (mk-project-tree files)
+  
   {"cdr"
    [{"src" [{"cljc" [{"cdr" ["fs.cljc"]}]}]}
     {"resources" ["public"]}]}
