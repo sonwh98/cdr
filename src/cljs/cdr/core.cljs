@@ -20,8 +20,6 @@
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
 
-
-
 (defn process-ns! [s-expression]
   (let [ns-form? #(and (list? %)
                        (= 'ns (first %)))
