@@ -109,40 +109,50 @@
       (empty? node) (mk-node paths)
       (map? node) (if (contains? node p)
                     (let [sub-node (node p)
+                          _ (prn "foo sub-node=" sub-node)
                           sub-node1 (attach sub-node remaining-paths)]
-                      (prn "sub-node=" sub-node)
-                      (prn "sub-node1=" sub-node1)
+                      (prn "foo node=" node)
+                      (prn "foo sub-node1=" sub-node1)
                       (if (vector? sub-node1)
                         (assoc node p sub-node1)
                         (assoc node p [sub-node1])))
                     (assoc node p [(mk-node remaining-paths)]))
       (vector? node) (if (empty? remaining-paths)
                        (let [r  (conj node p)]
-                         (prn "empty node=" node " p=" p " r=" r)
+                         (prn "last node=" node " p=" p " r=" r)
                          r)
                        (let [vector-of-nodes node
                              found-node (->> vector-of-nodes
                                              (filter #(contains? % p))
                                              first)
                              without-found-node (->> vector-of-nodes
-                                                     (remove #(contains? % p)))]
+                                                     (remove #(contains? % p))
+                                                     vec)]
                          (prn "vector-of-nodes=" vector-of-nodes)
                          (prn "found-node=" found-node)
+                         (prn "without-found-node=" without-found-node)
                          (if found-node
                            (let [sub-node (found-node p)
+                                 _ (prn "sub-node=" sub-node)
                                  new-sub-node (attach sub-node remaining-paths)]
-                             (prn "sub-node=" sub-node)
                              (prn "new-sub-node=" new-sub-node)
                              (if (vector? new-sub-node)
-                               (assoc found-node p
-                                      new-sub-node)
-                               (assoc found-node p
-                                      [new-sub-node])))
+                               (let [r (assoc found-node p
+                                              new-sub-node)
+                                     r2 (conj without-found-node r)]
+                                 (prn "haha r=" r)
+                                 (prn "haha r2=" r2)
+                                 r2
+                                 )
+                               (let [b (assoc found-node p
+                                              [new-sub-node])]
+                                 (prn "baba b=" b)
+                                 b)))
                            (let [new-node (mk-node paths)
-                                 vofn(conj vector-of-nodes new-node)]
+                                 r (conj node new-node)]
                              (prn "new-node=" new-node)
-                             (prn "vofn=" vofn)
-                             vofn))))
+                             (prn "r=" r)
+                             r))))
       :else node)))
 
 (defn mk-project-tree [files]
@@ -151,6 +161,7 @@
                     files)]
     (reduce attach
             {}
+            ;;{"cdr" [{"src" [{"cljc" [{"cdr" ["fs.cljc"]}]}]} {"resources" ["dark.css"]}]}
             paths)))
 
 (comment
@@ -176,14 +187,13 @@
 
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              ;;"/cdr/src/cljc/cdr/util.cljc"
-              ;; "/cdr/src/cljc/cdr/foobar.cljc"
-              ;; "/cdr/resources/public/js/clojure.js"
-              ;; "/cdr/resources/public/js/parinfer.js"
-              ;;"/cdr/resources/public/css/clojure.css"
-              ;;"/cdr/resources/public/css/dark.css"
-              ;;"/cdr/resources/dark.css"
-              "/cdr/resources/light.css"
+              "/cdr/src/cljc/cdr/util.cljc"
+              "/cdr/src/cljc/cdr/foobar.cljc"
+              "/cdr/resources/public/js/clojure.js"
+              "/cdr/resources/public/js/parinfer.js"
+              "/cdr/resources/public/css/clojure.css"
+              "/cdr/resources/public/css/dark.css"
+
               ])
 
   (mk-project-tree files)
