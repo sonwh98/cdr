@@ -123,8 +123,9 @@
             paths)))
 
 (comment
-  (def n {"cdr" [{"src" ["clojure.clj"]}]})
-  (node->path n)
+  (node->path {"cdr" [{"src" ["clojure.clj"]}]})
+  (node->path {"cdr"
+               [{"src" [{"cljc" [{"cdr" ["fs.cljc" "util.cljc" "foobar.cljc"]}]}]}]})
   
   (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
                                              {"js" ["clojure.js" "codemirror.js"]}
@@ -135,6 +136,7 @@
                             {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
                     "project.clj"
                     ]})
+
   (get-path {"resources" [{"public" [{"css" ["codemirror.css" "docs.css"]}]}]}
             ["resources" "public" "css"])
   
@@ -151,11 +153,7 @@
               "/cdr/resources/public/js/parinfer.js"
               "/cdr/resources/public/css/clojure.css"
               "/cdr/resources/public/css/dark.css"
-
               ])
 
   (mk-project-tree files)
-  
-  (node->path {"cdr"
-               [{"src" [{"cljc" [{"cdr" ["fs.cljc" "util.cljc" "foobar.cljc"]}]}]}]})
   )
