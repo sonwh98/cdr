@@ -81,22 +81,6 @@
   (let [path (node->path node)]
     (str "/" (str/join "/" path))))
 
-(defn- merge-node-helper [n1 n2]
-  (prn "n1=" n1)
-  (prn "n2=" n2)
-
-  (cond
-    (and (vector? n1)
-         (vector? n2)) (let []
-                         )
-    (and (map? n1)
-         (map? n2)) (merge-with into n1 n2)
-    
-    :else n1))
-
-(defn merge-nodes [n1 n2]
-  (merge-with merge-node-helper n1 n2))
-
 (defn attach [node paths]
   (let [p (first paths)
         remaining-paths (-> paths rest vec)]
@@ -172,36 +156,6 @@
 
   (mk-project-tree files)
   
-  {"cdr"
-   [{"src" [{"cljc" [{"cdr" ["fs.cljc"]}]}]}
-    {"resources" ["public"]}]}
-  
   (node->path {"cdr"
                [{"src" [{"cljc" [{"cdr" ["fs.cljc" "util.cljc" "foobar.cljc"]}]}]}]})
-  
-  ({"cdr" [{"resources" [{"public" [{"css" ["codemirror.css"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"css" ["dracula.css"]}]}]}]}
-   {"cdr"
-    [{"resources"
-      [{"public" [{"css" ["material-components-web.min.css"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["active-line.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["clojure-parinfer.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["closebrackets.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["codemirror.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["lightning-fs.min.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["matchbrackets.js"]}]}]}]}
-   {"cdr"
-    [{"resources"
-      [{"public" [{"js" ["material-components-web.min.js"]}]}]}]}
-   {"cdr"
-    [{"resources" [{"public" [{"js" ["parinfer-codemirror.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["parinfer.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" [{"js" ["clojure.js"]}]}]}]}
-   {"cdr" [{"resources" [{"public" ["index.html"]}]}]}
-   {"cdr" [{"src" [{"clj" [{"cdr" ["server.clj"]}]}]}]}
-   {"cdr" [{"src" [{"clj" ["user.clj"]}]}]}
-   {"cdr" [{"src" [{"cljs" [{"cdr" ["mdc.cljs"]}]}]}]}
-   {"cdr" [{"src" [{"cljs" [{"cdr" ["core.cljs"]}]}]}]}
-   {"cdr" ["project.clj"]})
   )
