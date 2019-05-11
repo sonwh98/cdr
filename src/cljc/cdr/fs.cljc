@@ -166,7 +166,7 @@
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
               "/cdr/src/cljc/cdr/util.cljc"
-              ;;"/cdr/src/cljc/cdr/foobar.cljc"
+              ;; "/cdr/src/cljc/cdr/foobar.cljc"
               ;;"/cdr/resources/public/js/codemirror.js"
               ;; "/cdr/resources/public/js/clojure.js"
               ;; "/cdr/resources/public/js/parinfer.js"
