@@ -126,10 +126,15 @@
                          (prn "found-node=" found-node)
 
                          (if found-node
-                           (let [new-found-node (attach (found-node p) remaining-paths)]
-                             (prn "new-found-node=" new-found-node)
-                             (assoc found-node p
-                                    new-found-node))
+                           (let [sub-node (found-node p)
+                                 new-sub-node (attach sub-node remaining-paths)]
+                             (prn "sub-node=" sub-node)
+                             (prn "new-sub-node=" new-sub-node)
+                             (if (vector? new-sub-node)
+                               (assoc found-node p
+                                      new-sub-node)
+                               (assoc found-node p
+                                      [new-sub-node])))
                            (let [new-node (mk-node remaining-paths)]
                              (prn "new-node=" new-node)
                              (conj vector-of-nodes new-node)))))
@@ -166,7 +171,7 @@
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
               "/cdr/src/cljc/cdr/util.cljc"
-              ;; "/cdr/src/cljc/cdr/foobar.cljc"
+              "/cdr/src/cljc/cdr/foobar.cljc"
               ;;"/cdr/resources/public/js/codemirror.js"
               ;; "/cdr/resources/public/js/clojure.js"
               ;; "/cdr/resources/public/js/parinfer.js"
@@ -183,6 +188,8 @@
             paths)
     )
 
+  (node->path {"cdr"
+               [{"src" [{"cljc" [{"cdr" ["fs.cljc" "util.cljc" "foobar.cljc"]}]}]}]})
   
   ({"cdr" [{"resources" [{"public" [{"css" ["codemirror.css"]}]}]}]}
    {"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
