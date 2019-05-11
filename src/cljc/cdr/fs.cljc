@@ -85,34 +85,57 @@
   (prn "n1=" n1)
   (prn "n2=" n2)
 
-  (if (and (vector? n1)
-           (vector? n2))
-    (let [a (node->path n1)
-          b (node->path n2)
-          [a-only b-only both-a-b] (d/diff a b)
-          common both-a-b
-          path (get-path (first n1) common)
-          _ (prn "path=" path)
-          union (->> (concat a-only b-only)
-                     (remove nil?)
-                     vec)
-          _ (prn "union a b=" union)
-          a-children (get-in (first n1)
-                             path)
-          difference (->> (concat a-children b-only)
-                          (remove nil?)
-                          vec)
-          merged-node (mk-node common difference)]
-      (prn "a=" a)
-      (prn "b=" b)
-      (prn "common=" common)
-      (prn "a-children=" a-children)
-      (prn "difference=" difference)
-      [merged-node])
-    n1))
+  (cond
+    (and (vector? n1)
+         (vector? n2)) (let []
+                         )
+    (and (map? n1)
+         (map? n2)) (merge-with into n1 n2)
+    
+    :else n1))
 
 (defn merge-nodes [n1 n2]
   (merge-with merge-node-helper n1 n2))
+
+(defn attach [node paths]
+  (let [p (first paths)
+        remaining-paths (-> paths rest vec)]
+    (prn "node=" node)
+    (prn "paths=" paths)
+    (prn "p=" p)
+    (prn "remaining=" remaining-paths)
+
+    (cond
+      (empty? node) (mk-node paths)
+      (map? node) (if (contains? node p)
+                    (let [children-vec (node p)]
+                      (prn "children-vec=" children-vec)
+                      (assoc node p [(attach children-vec remaining-paths)]))
+                    (assoc node p [(mk-node remaining-paths)]))
+      (vector? node) (if (empty? remaining-paths)
+                       (let [r  (conj node p)]
+                         (prn "empty node=" node " p=" p " r=" r)
+                         r)
+                       (let [vector-of-nodes node
+                             found-node (->> vector-of-nodes
+                                             (filter #(contains? % p))
+                                             first)
+                             without-found-node (->> vector-of-nodes
+                                                     (remove #(contains? % p)))]
+                         (prn "vector-of-nodes=" vector-of-nodes)
+                         (prn "found-node=" found-node)
+
+                         (if found-node
+                           (let [new-found-node (attach (found-node p) remaining-paths)]
+                             (prn "new-found-node=" new-found-node)
+                             (assoc found-node p
+                                    new-found-node))
+                           (let [new-node (mk-node remaining-paths)]
+                             (prn "new-node=" new-node)
+                             (conj vector-of-nodes new-node)))))
+      :else node)))
+
+
 
 (comment
   (def n {"cdr" [{"src" ["clojure.clj"]}]})
@@ -135,45 +158,31 @@
   (get-in root (get-path root "/cdr/resources/public/css/"))
   (get-in root (get-path root "/cdr/src/clj/cdr"))
 
+  {"cdr"
+   [{"src"
+     [{"clj" [{"cdr" ["server.clj"]}]}
+      {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
+    "project.clj"]}
+  
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
               "/cdr/src/cljc/cdr/util.cljc"
-              "/cdr/resources/public/js/codemirror.js"
-              "/cdr/resources/public/js/clojure.js"
-              "/cdr/resources/public/js/parinfer.js"
-              "/cdr/resources/public/css/clojure.css"
-              "/cdr/resources/public/css/dark.css"])
-
-  (def n1 (mk-node "/cdr/resources/pubic/css/codemirror.css"))
-  (def n2 (mk-node "/cdr/resources/pubic/css/doc.css"))
-  (d/diff n1 n2)
-  (def n3  (merge-nodes n1 n2))
-  (def n2a (mk-node "/cdr/src/cljc/cdr" ["foo.cljc" "bar.cljc"]))
-
-  (mk-node ["cdr" "src" "cljc" "cdr" "fs.cljc"])
-  (mk-node ["cdr" "src" "cljc" "cdr"] ["fs.cljc" "bar.cljc"])
-  (mk-node "/cdr/src/cljc/cdr" ["fs.cljc" "bar.cljc"])
-  
-  (def n3 (merge-nodes n1 n2))
-  (node->path n2)
-  (node->path-str n2)
-  
-  (def nodes [{"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" ]}]}]}]}
-              #_{"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
-              #_{"cdr" [{"resources" [{"public" [{"css" ["dracula.css"]}]}]}]}
-              #_{"cdr"
-                 [{"resources"
-                   [{"public" [{"css" ["material-components-web.min.css"]}]}]}]}
-              {"cdr" [{"resources" [{"public" [{"js" ["active-line.js"]}]}]}]}
+              ;;"/cdr/src/cljc/cdr/foobar.cljc"
+              ;;"/cdr/resources/public/js/codemirror.js"
+              ;; "/cdr/resources/public/js/clojure.js"
+              ;; "/cdr/resources/public/js/parinfer.js"
+              ;; "/cdr/resources/public/css/clojure.css"
+              ;; "/cdr/resources/public/css/dark.css"
               ])
 
-  (reduce (fn [root node]
-            (merge-nodes root node)
-            )
-          nodes
-          )
+  (let [paths (mapv (fn [f]
+                      (-> f (str/split #"/") rest vec))
+                    files)]
+    (prn paths)
+    (reduce attach
+            {}
+            paths)
+    )
 
-  (get-in (nodes 0)
-          (get-path (nodes 0) "/cdr/resources/public/css/"))
   
   ({"cdr" [{"resources" [{"public" [{"css" ["codemirror.css"]}]}]}]}
    {"cdr" [{"resources" [{"public" [{"css" ["docs.css"]}]}]}]}
