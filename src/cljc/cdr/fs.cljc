@@ -138,9 +138,11 @@
                                       new-sub-node)
                                (assoc found-node p
                                       [new-sub-node])))
-                           (let [new-node (mk-node paths)]
+                           (let [new-node (mk-node paths)
+                                 vofn(conj vector-of-nodes new-node)]
                              (prn "new-node=" new-node)
-                             (conj vector-of-nodes new-node)))))
+                             (prn "vofn=" vofn)
+                             vofn))))
       :else node)))
 
 (defn mk-project-tree [files]
@@ -174,15 +176,15 @@
 
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              "/cdr/src/cljc/cdr/util.cljc"
+              ;;"/cdr/src/cljc/cdr/util.cljc"
               ;; "/cdr/src/cljc/cdr/foobar.cljc"
               ;; "/cdr/resources/public/js/clojure.js"
               ;; "/cdr/resources/public/js/parinfer.js"
-              "/cdr/resources/public/css/clojure.css"
+              ;;"/cdr/resources/public/css/clojure.css"
               ;;"/cdr/resources/public/css/dark.css"
+              ;;"/cdr/resources/dark.css"
+              "/cdr/resources/light.css"
               ])
-
-  
 
   (mk-project-tree files)
   
