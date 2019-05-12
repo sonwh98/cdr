@@ -9,7 +9,7 @@ CDR integrates with git hosted on github or bitbucket.  CDR uses parainfer with 
 The only dependency is a web browser like Chrome and FireFox.
 
 # What works
-* evaluate arbitary Clojure code in the browser
+* evaluate arbitary Clojure code in the browser. Open up developer's console to see output
 * clone git repository from github or bitbucket via http
 
 
