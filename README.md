@@ -34,4 +34,6 @@ Once your docker container is running connect to http://localhost:3004/index.htm
 
 # Live Demo
 
+Try the live demo. Be patient. It takes a while to load
+
 http://cdr.stigmergy.systems
