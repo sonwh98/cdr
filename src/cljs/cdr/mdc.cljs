@@ -56,20 +56,11 @@
                    [:nav {:class "mdc-list"}
                     drawer-content
                     
-                    
-                    [:hr {:class "mdc-list-divider"}]
-                    [:h6 {:class "mdc-list-group__subheader"} "Labels"]
-                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"] "Family"]
-                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"] "Friends"]
-                    [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "bookmark"] "Work"]
                     [:hr {:class "mdc-list-divider"}]
                     [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
                      [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "settings"] "Settings"]
                     [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
-                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "announcement"] "Help &amp; feedback"]]]]
+                     [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "announcement"] "Help"]]]]
                  [:div {:class "mdc-drawer-scrim"}]
                  [:div {:class "drawer-frame-app-content"}
                   [:header {:class "mdc-top-app-bar drawer-top-app-bar"}
