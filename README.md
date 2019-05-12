@@ -21,7 +21,7 @@ Deploy using Docker:
 % git clone https://github.com/sonwh98/cdr.git
 % cd cdr
 % docker build -t cdr .
-% docker run -p 3004:3004 cdr
+% docker run -dp 3004:3000 --name cdr -t cdr
 ```
 
 Once your docker container is running connect to http://localhost:3004/index.html
