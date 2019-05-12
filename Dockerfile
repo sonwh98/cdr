@@ -4,4 +4,4 @@ WORKDIR /app
 COPY target/cdr-0.0.1-standalone.jar .
 COPY resources/public resources/public
 CMD java -jar cdr-0.0.1-standalone.jar
-EXPOSE 3000
+EXPOSE 3004
