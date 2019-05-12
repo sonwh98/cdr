@@ -201,9 +201,8 @@
   (set! (.-fs js/window) (js/LightningFS. "fs"))
   (js/git.plugins.set "fs" (.-fs js/window))
   (set! (.-pfs js/window)  js/window.fs.promises)
-
   
-  (ws/connect-to-websocket-server {:port 3000})
+  (ws/connect-to-websocket-server {:port 80})
   (r/render-component [cdr-ui app-state] (js/document.getElementById "app"))
   (log/set-level! :info))
 
@@ -211,4 +210,4 @@
   (prn "from clj " msg)
   (swap! app-state assoc :repl-text msg))
 
-(init)
+

@@ -21,10 +21,10 @@
   
   :cljsbuild {:builds
               [{:id "dev"
-                :source-paths ["src/cljs" "src/cljc"]
+                :source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
                 :figwheel {:on-jsload "cdr.core/jsload"
                            :websocket-host :js-client-host}
-                :compiler {:main cdr.core
+                :compiler {:main cdr.init
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/cdr.js"
                            :output-dir "resources/public/js/compiled/out"
