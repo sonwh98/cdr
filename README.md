@@ -9,7 +9,7 @@ CDR integrates with git hosted on github or bitbucket.  CDR uses parainfer with 
 The only dependency is a web browser like Chrome and FireFox.
 
 Long term goal is to turn this into a development environment for popular languages like 
-Java/C#/Python/JavaScript.
+Java/C#/Python/JavaScript as well.
 
 # What works
 * evaluate arbitary Clojure code in the browser. Open up browser developer's console to see output
