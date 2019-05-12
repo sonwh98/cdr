@@ -8,6 +8,11 @@ alike.
 CDR integrates with git hosted on github or bitbucket.  CDR uses parainfer with CodeMirror for structural editing.
 The only dependency is a web browser like Chrome and FireFox.
 
+# What works
+* evaluate arbitary Clojure code in the browser
+* clone git repository from github or bitbucket via http
+
+
 # Quick Start
 
 Deploy using Docker:
