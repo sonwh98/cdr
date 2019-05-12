@@ -14,7 +14,7 @@
 (defonce stop-fn (atom nil))
 
 (defn start []
-  (reset! stop-fn (h/run-server app {:port 3000})))
+  (reset! stop-fn (h/run-server app {:port 3004})))
 
 (defn stop []
   (when @stop-fn
