@@ -12,6 +12,9 @@ The only dependency is a web browser like Chrome and FireFox.
 * evaluate arbitary Clojure code in the browser. Open up browser developer's console to see output
 * clone git repository from github or bitbucket via http
 
+# Limitations
+
+Requires bootstrap ClojureScript so cannot take advantage of advance optimization of Google Closure compiler
 
 # Quick Start
 
@@ -26,6 +29,6 @@ Deploy using Docker:
 
 Once your docker container is running connect to http://localhost:3004/index.html
 
-# Demo
+# Live Demo
 
 http://cdr.stigmergy.systems
