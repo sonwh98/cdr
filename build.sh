@@ -1,0 +1,2 @@
+export LEIN_SNAPSHOTS_IN_RELEASE=true
+lein uberjar
