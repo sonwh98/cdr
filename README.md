@@ -8,6 +8,9 @@ alike.
 CDR integrates with git hosted on github or bitbucket.  CDR uses parainfer with CodeMirror for structural editing.
 The only dependency is a web browser like Chrome and FireFox.
 
+Long term goal is to turn this into a development environment for popular languages like 
+Java/C#/Python/JavaScript.
+
 # What works
 * evaluate arbitary Clojure code in the browser. Open up browser developer's console to see output
 * clone git repository from github or bitbucket via http
