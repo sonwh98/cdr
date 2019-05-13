@@ -33,6 +33,13 @@ Deploy using Docker:
 
 Once your docker container is running connect to http://localhost:3004/index.html
 
+If you want to tinker with it from emacs/cider, just cider-jack-in. Once the REPL is started,
+
+```
+user> (start) ;;starts figwheel and webserver
+user> (cljs) ;;starts clojurescript REPL. NOTE: must open the app in the browser first
+```
+
 # Live Demo
 
 Try the live demo. Be patient. It takes a while to load
