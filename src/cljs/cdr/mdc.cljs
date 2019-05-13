@@ -1,6 +1,7 @@
 (ns cdr.mdc
   (:require [reagent.core :as r]
-            [reagent.dom :as dom]))
+            [reagent.dom :as dom]
+            [taoensso.timbre :as log :include-macros true]))
 
 ;;material component for web
 ;;https://github.com/material-components/material-components-web/blob/master/docs/getting-started.md
@@ -35,6 +36,36 @@
                       [:span {:class "mdc-tab__ripple"}]]]]]]
                  )}))
 
+(defn toggle [evt]
+  (let [element (.-target evt)
+        parent (.-parentElement element)]
+    (js/console.log element)
+    (.. parent (querySelector ".nested") -classList (toggle "active"))
+    )
+  )
+
+(defn tree []
+  [:ul {:id "myUL"}
+   [:li
+    [:span {:class "caret"
+            :on-click toggle} "Beverages"]
+    [:ul {:class "nested"}
+     [:li "Water"]
+     [:li "Coffee"]
+     [:li
+      [:span {:class "caret"} "Tea"]
+      [:ul {:class "nested"}
+       [:li "Black Tea"]
+       [:li "White Tea"]
+       [:li
+        [:span {:class "caret"} "Green Tea"]
+        [:ul {:class "nested"}
+         [:li "Sencha"]
+         [:li "Gyokuro"]
+         [:li "Matcha"]
+         [:li "Pi Lo Chun"]]]]]]]]
+  )
+
 (def drawer (r/create-class
              {:component-did-mount (fn [this]
                                      (let [this-el (dom/dom-node this)
@@ -55,7 +86,7 @@
                   [:div {:class "mdc-drawer__content"}
                    [:nav {:class "mdc-list"}
                     drawer-content
-                    
+                    [tree]
                     [:hr {:class "mdc-list-divider"}]
                     [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
                      [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "settings"] "Settings"]

@@ -105,25 +105,7 @@
   (. evt preventDefault)
   (. evt stopPropagation))
 
-(defn tree-node-view [{:keys [label on-click] :as node} ]
-  (let [children (->> node :node/children
-                      (map (fn [node] [tree-node-view node])))
-        id (:node/name node)]
-    [:li {:class "li-tree"}
-     [:label {:class "label-tree" :for id
-              :on-click (fn [evt]
-                          (on-click node)
-                          (stop-prevent evt))} label]
-     [:input {:class "input-tree" :type "checkbox" :id id
-              :on-click stop-propagation}]
-     (into  [:ol {:class "ol-tree"
-                  :on-click stop-propagation}] children)]))
 
-(defn tree [{:keys [root on-click]}]
-  [:aside 
-   (into [:ol {:class "tree"}]
-         (for [node (:node/children @root)]
-           [tree-node-view node on-click]))])
 
 (defn file-item [file]
   [:a {:class "mdc-list-item " :tabIndex 0
@@ -202,7 +184,7 @@
   (js/git.plugins.set "fs" (.-fs js/window))
   (set! (.-pfs js/window)  js/window.fs.promises)
   
-  (ws/connect-to-websocket-server {:port 80})
+  ;;(ws/connect-to-websocket-server {:port 80})
   (r/render-component [cdr-ui app-state] (js/document.getElementById "app"))
   (log/set-level! :info))
 
