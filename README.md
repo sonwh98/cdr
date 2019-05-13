@@ -1,4 +1,4 @@
-# CDR (Clojure Development REPL)
+# CDR (Clojure Development REPL or Contents of the Decrement Register)
 
 A Clojure/ClojureScript IDE completely in the browser. One of the difficulty in getting started with Clojure/LISP
 programming is the tooling. The goal of CDR is to make Clojure development simple and easy for newbies and expert 
