@@ -44,27 +44,36 @@
     )
   )
 
+(def dir-prop {:class "caret"
+               :on-click toggle})
+
+(defn get-name [node]
+  (-> node keys first))
+
+(defn get-children [node]
+  (-> node vals first))
+
+(defn dir [node]
+  [:li
+   [:span dir-prop (get-name node)]
+   [:ul {:class "nested"}
+    (for [c (get-children node)]
+      (if (string? c)
+        [:li c]
+        [dir c]))]])
+
 (defn tree []
-  [:ul {:id "myUL"}
-   [:li
-    [:span {:class "caret"
-            :on-click toggle} "Beverages"]
-    [:ul {:class "nested"}
-     [:li "Water"]
-     [:li "Coffee"]
-     [:li
-      [:span {:class "caret"} "Tea"]
-      [:ul {:class "nested"}
-       [:li "Black Tea"]
-       [:li "White Tea"]
-       [:li
-        [:span {:class "caret"} "Green Tea"]
-        [:ul {:class "nested"}
-         [:li "Sencha"]
-         [:li "Gyokuro"]
-         [:li "Matcha"]
-         [:li "Pi Lo Chun"]]]]]]]]
-  )
+  (let [root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
+                                              {"js" ["clojure.js" "codemirror.js"]}
+                                              "index.html"]}
+
+                                   ]}
+                     {"src" [{"clj" [{"cdr" ["server.clj"]}]}
+                             {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
+                     "project.clj"
+                     ]}]
+    [:ul {:id "myUL"}
+     [dir root]]))
 
 (def drawer (r/create-class
              {:component-did-mount (fn [this]
