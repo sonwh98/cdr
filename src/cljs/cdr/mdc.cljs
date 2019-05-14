@@ -36,45 +36,6 @@
                       [:span {:class "mdc-tab__ripple"}]]]]]]
                  )}))
 
-(defn toggle [evt]
-  (let [element (.-target evt)
-        parent (.-parentElement element)]
-    (js/console.log element)
-    (.. parent (querySelector ".sub-dir") -classList (toggle "active"))
-    )
-  )
-
-(def dir-prop {:class "dir"
-               :on-click toggle})
-
-(defn get-name [node]
-  (-> node keys first))
-
-(defn get-children [node]
-  (-> node vals first))
-
-(defn dir [node]
-  [:li
-   [:span dir-prop (get-name node)]
-   [:ul {:class "sub-dir"}
-    (for [c (get-children node)]
-      (if (string? c)
-        [:li c]
-        [dir c]))]])
-
-(defn tree []
-  (let [root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
-                                              {"js" ["clojure.js" "codemirror.js"]}
-                                              "index.html"]}
-
-                                   ]}
-                     {"src" [{"clj" [{"cdr" ["server.clj"]}]}
-                             {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
-                     "project.clj"
-                     ]}]
-    [:ul {:id "myUL"}
-     [dir root]]))
-
 (def drawer (r/create-class
              {:component-did-mount (fn [this]
                                      (let [this-el (dom/dom-node this)
@@ -95,7 +56,6 @@
                   [:div {:class "mdc-drawer__content"}
                    [:nav {:class "mdc-list"}
                     drawer-content
-                    [tree]
                     [:hr {:class "mdc-list-divider"}]
                     [:a {:class "mdc-list-item", :href "#", :tabIndex "-1"}
                      [:i {:class "material-icons mdc-list-item__graphic", :aria-hidden "true"} "settings"] "Settings"]

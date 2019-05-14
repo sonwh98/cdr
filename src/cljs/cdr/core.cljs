@@ -8,6 +8,7 @@
             [cdr.fs :as fs]
             [cdr.util :as util]
             [cdr.git :as git]
+            [cdr.dir-navigator :as dir]
             ;;[stigmergy.mr-clean :as r]
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
@@ -144,15 +145,9 @@
                                          (a/<! (fs/walk-dir {:dir dir
                                                              :on-file (fn [file]
                                                                         (when-not (re-find #".git" file)
-                                                                          (swap! files conj file)
-                                                                          ;;(prn (fs/mk-node file))
-                                                                          ))}))
-                                         (swap! app-state assoc-in [:files] @files)
-                                         (let [project-tree (fs/mk-project-tree @files)]
-                                           (pp/pprint project-tree)
-                                           ;;(pp/pprint nodes)
-                                           )
-                                         )))} "GET"]])))
+                                                                          (swap! files conj file)))}))
+                                         (let [project-root (fs/mk-project-tree @files)]
+                                           (swap! app-state assoc :project-root project-root)))))} "GET"]])))
 
 (defn cdr-ui [state]
   (r/create-class {:component-did-mount (fn [component]
@@ -160,22 +155,29 @@
                                             (fs/walk-dir {:dir (str "/" project-name)
                                                           :on-file (fn [file]
                                                                      (if-not (re-find #".git" file)
-                                                                       (swap! state update-in [:files] conj file))
-                                                                     )}))               
-                                          )
+                                                                       (swap! state update-in [:files] conj file)))})))
                    
                    :reagent-render (fn [state]
                                      [:div
-                                      (let [project-name (r/cursor state [:project-name])]
+                                      (let [project-name (r/cursor state [:project-name])
+                                            project-root (r/cursor state [:project-root])]
                                         [mdc/drawer {:drawer-header [:div
                                                                      [:h3 {:class "mdc-drawer__title"} "Project"]
                                                                      [:h6 {:class "mdc-drawer__subtitle"} @project-name]
-                                                                     [git-input project-name]
-                                                                     
-                                                                     ]
+                                                                     [git-input project-name]]
                                                      :content [code-area state]
-                                                     :drawer-content (for [file (-> @state :files)]
-                                                                       ^{:key file} [file-item file])}])
+                                                     :drawer-content
+                                                     [dir/tree {:node project-root
+                                                                :on-click (fn [file]
+                                                                            (js/console.log file)
+                                                                            (prn "foo=" file)
+                                                                            #_(let [cm (js/document.querySelector ".CodeMirror")
+                                                                                    cm (.. cm -CodeMirror)]
+                                                                                (a/go
+                                                                                  (let [[err file-content] (a/<! (await (js/window.pfs.readFile file)))
+                                                                                        file-content (util/array-buffer->str file-content)]
+                                                                                    (.. cm getDoc (setValue file-content))))))
+                                                                }]}])
                                       #_[mdc/tab-bar]
                                       ])}))
 
