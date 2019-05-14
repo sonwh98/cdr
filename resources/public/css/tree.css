@@ -7,7 +7,7 @@ ul, #myUL {
     padding: 0;
 }
 
-.caret {
+.dir {
     cursor: pointer;
     -webkit-user-select: none; /* Safari 3.1+ */
     -moz-user-select: none; /* Firefox 2+ */
@@ -15,20 +15,20 @@ ul, #myUL {
     user-select: none;
 }
 
-.caret::before {
+.dir::before {
     content: "\25B6";
     color: black;
     display: inline-block;
     margin-right: 6px;
 }
 
-.caret-down::before {
+.dir-down::before {
     -ms-transform: rotate(90deg); /* IE 9 */
     -webkit-transform: rotate(90deg); /* Safari */'
   transform: rotate(90deg);  
 }
 
-.nested {
+.sub-dir {
   display: none;
 }
 

@@ -40,11 +40,11 @@
   (let [element (.-target evt)
         parent (.-parentElement element)]
     (js/console.log element)
-    (.. parent (querySelector ".nested") -classList (toggle "active"))
+    (.. parent (querySelector ".sub-dir") -classList (toggle "active"))
     )
   )
 
-(def dir-prop {:class "caret"
+(def dir-prop {:class "dir"
                :on-click toggle})
 
 (defn get-name [node]
@@ -56,7 +56,7 @@
 (defn dir [node]
   [:li
    [:span dir-prop (get-name node)]
-   [:ul {:class "nested"}
+   [:ul {:class "sub-dir"}
     (for [c (get-children node)]
       (if (string? c)
         [:li c]
