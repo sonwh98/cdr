@@ -9,7 +9,7 @@ The only dependency is a web browser like Chrome and FireFox.
 
 Long term goal is to turn this into a development environment for other languages like 
 Java/C#/Python/JavaScript as well. This would require writing parsers to transform other languages into a
-AST that can be interpreted/compiled by ClojureScript.
+AST that can be interpreted/compiled by ClojureScript or WASM.
 
 # What works
 * evaluate arbitary Clojure code in the browser. Open up browser developer's console to see output
