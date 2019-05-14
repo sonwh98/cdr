@@ -66,8 +66,12 @@
 (defn mk-node
   ([dir-path files]
    (let [dir-path (if (string? dir-path)
-                    (-> dir-path (str/split #"/") rest)
+                    (-> dir-path (str/split #"/") rest vec)
                     dir-path)
+         files (mapv (fn [f]
+                       {:name f
+                        :dir-path dir-path})
+                     files)
          tree (assoc-in {} dir-path files)]
      (map-value->vector tree)))
   ([file-path]
@@ -75,7 +79,7 @@
                      (-> file-path (str/split #"/") rest)
                      file-path)
          file (last file-path)
-         dir-path (drop-last file-path)]
+         dir-path (-> file-path drop-last vec)]
      (mk-node dir-path [file]))))
 
 (defn- node->path-helper [node path]
@@ -98,20 +102,22 @@
   (let [path (node->path node)]
     (str "/" (str/join "/" path))))
 
-(defn attach [node paths]
+(defn attach [node paths complete-path]
   (let [p (first paths)
         remaining-paths (-> paths rest vec)]
+    ;;(prn "complete-path=" complete-path)
     (cond
       (empty? node) (mk-node paths)
       (map? node) (if (contains? node p)
                     (let [sub-node (node p)
-                          sub-node (attach sub-node remaining-paths)]
+                          sub-node (attach sub-node remaining-paths complete-path)]
                       (if (vector? sub-node)
                         (assoc node p sub-node)
                         (assoc node p [sub-node])))
-                    (assoc node p [(mk-node remaining-paths)]))
+                    (assoc node p [(mk-node complete-path #_remaining-paths)]))
       (vector? node) (if (empty? remaining-paths)
-                       (conj node p)
+                       (conj node {:name p
+                                   :dir-path (-> complete-path drop-last vec)})
                        (let [vector-of-nodes node
                              found-node (->> vector-of-nodes
                                              (filter #(contains? % p))
@@ -121,21 +127,25 @@
                                                      vec)]
                          (if found-node
                            (let [sub-node (found-node p)
-                                 new-sub-node (attach sub-node remaining-paths)]
+                                 new-sub-node (attach sub-node remaining-paths complete-path)]
                              (if (vector? new-sub-node)
                                (conj without-found-node
                                      (assoc found-node p
                                             new-sub-node))
                                (assoc found-node p
                                       [new-sub-node])))
-                           (conj node (mk-node paths)))))
+                           (let [n (mk-node paths)
+                                 n (assoc n :dir-path (-> complete-path drop-last vec))]
+                             (prn "complete=" complete-path)
+                             (conj node n)))))
       :else node)))
 
 (defn mk-project-tree [files]
   (let [paths (mapv (fn [f]
                       (-> f (str/split #"/") rest vec))
                     files)]
-    (reduce attach
+    (reduce (fn [acc p]
+              (attach acc p p))
             {}
             paths)))
 
@@ -164,13 +174,15 @@
 
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              "/cdr/src/cljc/cdr/util.cljc"
-              "/cdr/src/cljc/cdr/foobar.cljc"
+              ;; "/cdr/src/cljc/cdr/util.cljc"
+              ;; "/cdr/src/cljc/cdr/foobar.cljc"
+              "/cdr/src/clj/cdr/server.clj"
               "/cdr/resources/public/js/clojure.js"
-              "/cdr/resources/public/js/parinfer.js"
-              "/cdr/resources/public/css/clojure.css"
-              "/cdr/resources/public/css/dark.css"
+              ;; "/cdr/resources/public/js/parinfer.js"
+              ;; "/cdr/resources/public/css/clojure.css"
+              ;; "/cdr/resources/public/css/dark.css"
               ])
 
   (mk-project-tree files)
+  (mk-node "/cdr/src/cljc/cdr/fs.cljc")
   )

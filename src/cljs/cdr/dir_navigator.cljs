@@ -18,9 +18,9 @@
    [:ul {:class "sub-dir"
          :style {:list-style-type :none}}
     (for [c (get-children node)]
-      (with-meta (if (string? c)
-                   [:li {:on-click #(on-click c)} c]
-                   [dir c])
+      (with-meta (if-let [file-name (:name c)]
+                   [:li {:on-click #(on-click c)} file-name]
+                   [dir c on-click])
         {:key (str c)}))]])
 
 (defn tree [{:keys [node on-click] }]
