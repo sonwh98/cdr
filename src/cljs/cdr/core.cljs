@@ -172,12 +172,10 @@
                       :drawer-content
                       [dir/tree {:node project-root
                                  :on-click (fn [{:keys [name dir-path] :as file}]
-                                             (prn "foo=" file)
                                              (let [cm (js/document.querySelector ".CodeMirror")
                                                    cm (.. cm -CodeMirror)
                                                    dir-path (str/join "/" dir-path)
                                                    file-name (str "/" dir-path "/" name)]
-
                                                (a/go
                                                  (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                                                        file-content (util/array-buffer->str file-content)]
