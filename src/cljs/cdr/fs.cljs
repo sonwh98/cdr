@@ -64,23 +64,24 @@
       {k v})))
 
 (defn mk-node
-  ([dir-path files]
+  ([dir-path files complete-path]
    (let [dir-path (if (string? dir-path)
                     (-> dir-path (str/split #"/") rest vec)
                     dir-path)
          files (mapv (fn [f]
+                       (prn "dir-path=" dir-path)
                        {:name f
-                        :dir-path dir-path})
+                        :dir-path (-> complete-path drop-last vec)})
                      files)
          tree (assoc-in {} dir-path files)]
      (map-value->vector tree)))
-  ([file-path]
+  ([file-path complete-path]
    (let [file-path (if (string? file-path)
                      (-> file-path (str/split #"/") rest)
                      file-path)
          file (last file-path)
          dir-path (-> file-path drop-last vec)]
-     (mk-node dir-path [file]))))
+     (mk-node dir-path [file] complete-path))))
 
 (defn- node->path-helper [node path]
   (cond
@@ -105,16 +106,15 @@
 (defn attach [node paths complete-path]
   (let [p (first paths)
         remaining-paths (-> paths rest vec)]
-    ;;(prn "complete-path=" complete-path)
     (cond
-      (empty? node) (mk-node paths)
+      (empty? node) (mk-node paths complete-path)
       (map? node) (if (contains? node p)
                     (let [sub-node (node p)
                           sub-node (attach sub-node remaining-paths complete-path)]
                       (if (vector? sub-node)
                         (assoc node p sub-node)
                         (assoc node p [sub-node])))
-                    (assoc node p [(mk-node complete-path #_remaining-paths)]))
+                    (assoc node p [(mk-node complete-path complete-path)]))
       (vector? node) (if (empty? remaining-paths)
                        (conj node {:name p
                                    :dir-path (-> complete-path drop-last vec)})
@@ -134,9 +134,7 @@
                                             new-sub-node))
                                (assoc found-node p
                                       [new-sub-node])))
-                           (let [n (mk-node paths)
-                                 n (assoc n :dir-path (-> complete-path drop-last vec))]
-                             (prn "complete=" complete-path)
+                           (let [n (mk-node paths complete-path)]
                              (conj node n)))))
       :else node)))
 
@@ -174,13 +172,14 @@
 
   
   (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              ;; "/cdr/src/cljc/cdr/util.cljc"
-              ;; "/cdr/src/cljc/cdr/foobar.cljc"
+              "/cdr/src/cljc/cdr/util.cljc"
+              "/cdr/src/cljc/cdr/foobar.cljc"
               "/cdr/src/clj/cdr/server.clj"
+              "/cdr/src/cljs/cdr/core.cljs"
               "/cdr/resources/public/js/clojure.js"
-              ;; "/cdr/resources/public/js/parinfer.js"
-              ;; "/cdr/resources/public/css/clojure.css"
-              ;; "/cdr/resources/public/css/dark.css"
+              "/cdr/resources/public/js/parinfer.js"
+              "/cdr/resources/public/css/clojure.css"
+              "/cdr/resources/public/css/dark.css"
               ])
 
   (mk-project-tree files)
