@@ -69,7 +69,6 @@
                     (-> dir-path (str/split #"/") rest vec)
                     dir-path)
          files (mapv (fn [f]
-                       (prn "dir-path=" dir-path)
                        {:name f
                         :dir-path (-> complete-path drop-last vec)})
                      files)
