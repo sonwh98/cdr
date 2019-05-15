@@ -4,6 +4,10 @@
   (let [decoder (js/TextDecoder. "UTF-8")]
     (.. decoder (decode array-buffer))))
 
+(defn str->array-buffer [str]
+  (let [e (js/TextEncoder. "UTF-8")]
+    (.. e (encode str))))
+
 (defn obj->clj
   [obj]
   (if (goog.isObject obj)
