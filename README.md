@@ -5,7 +5,7 @@ programming is the tooling. The goal of CDR is to make Clojure development simpl
 alike.
 
 CDR integrates with git hosted on github or bitbucket.  CDR uses parainfer with CodeMirror for structural editing.
-There will be no software to install to start hacking in Clojure/ClojureScript. The only dependency is a 
+There is no software to install to hack in Clojure/ClojureScript. The only dependency is a 
 web browser like Chrome and FireFox.
 
 Long term goal is to turn this into a development environment for other languages like 
