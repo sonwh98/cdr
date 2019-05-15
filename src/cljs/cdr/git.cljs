@@ -1,7 +1,8 @@
 (ns cdr.git
   (:refer-clojure :exclude [clone])
   (:require [clojure.core.async :as a :include-macros true]
-            [cljs-await.core :refer [await]]))
+            [cljs-await.core :refer [await]]
+            [cdr.util :as util]))
 
 (defn clone [{:keys [url dir]}]
   (a/go
@@ -16,7 +17,42 @@
 (comment
   (clone {:url "https://github.com/sonwh98/cdr.git"
           :dir "/cdr" })
+
+  (a/go
+    (let [[code ab] (a/<! (await (js/window.pfs.readFile "/cdr/foo.txt")))
+          file (util/array-buffer->str ab)]
+      (prn file)
+      )
+    )
+
+  (a/go
+    (let [r (a/<! (await (js/window.pfs.writeFile "/cdr/foo.txt" (util/str->array-buffer "foobar testing commit"))))]
+      (prn "r=" r)
+      )
+    )
   
+  (a/go
+    (let [sha (a/<! (await (js/git.commit #js{:dir "/cdr"
+                                              :message "add foo.txt"
+                                              :author #js{:name "Sun Tzu"
+                                                          :email "son.c.to@gmail.com"}})))]
+      (js/console.log sha))
+    )
+
+  (a/go
+    (let [r (a/<! (await (js/git.push #js{:dir "/cdr"
+                                          :remote "origin"
+                                          :ref "master"
+                                          :username "sonwh98"
+                                          :password "foobar"})))]
+      (prn "r=" r)
+      )
+    )
+  
+  (js/console.log #js{:dir "/cdr"
+                      :message "testing"
+                      :author #js{:name "Sun Tzu"
+                                  :email "son.c.to@gmail.com"}})
   (a/go
     (let [dir "/cdr2"]
       (prn "1->" (a/<! (await (js/window.pfs.mkdir dir))))
