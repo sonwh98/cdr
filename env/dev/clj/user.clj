@@ -1,6 +1,6 @@
 (ns user
   (:require [figwheel-sidecar.repl-api :as f]
-            [cdr.server :as s]
+            [stigmergy.cdr.server :as s]
             [taoensso.timbre :as log :include-macros true]))
 
 (defn start []

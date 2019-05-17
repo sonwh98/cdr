@@ -1,4 +1,4 @@
-(ns cdr.mdc
+(ns stigmergy.cdr.mdc
   (:require [reagent.core :as r]
             [reagent.dom :as dom]
             [taoensso.timbre :as log :include-macros true]))

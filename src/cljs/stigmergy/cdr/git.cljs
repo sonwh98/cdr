@@ -1,8 +1,8 @@
-(ns cdr.git
+(ns stigmergy.cdr.git
   (:refer-clojure :exclude [clone])
   (:require [clojure.core.async :as a :include-macros true]
             [cljs-await.core :refer [await]]
-            [cdr.util :as util]))
+            [stigmergy.cdr.util :as util]))
 
 (defn clone [{:keys [url dir]}]
   (a/go

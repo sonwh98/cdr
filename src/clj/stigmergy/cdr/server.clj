@@ -1,4 +1,4 @@
-(ns cdr.server
+(ns stigmergy.cdr.server
   (:require [compojure.core :refer [defroutes GET]]
             [compojure.route :as r]
             [org.httpkit.server :as h]

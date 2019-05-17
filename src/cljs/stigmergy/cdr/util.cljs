@@ -1,4 +1,4 @@
-(ns cdr.util)
+(ns stigmergy.cdr.util)
 
 (defn array-buffer->str [array-buffer]
   (let [decoder (js/TextDecoder. "UTF-8")]

@@ -1,5 +1,5 @@
-(ns cdr.init
-  (:require [cdr.core :as m]
+(ns stigmergy.cdr.init
+  (:require [stigmergy.cdr.core :as cdr]
             [figwheel.client :as figwheel :include-macros true]))
 
 (enable-console-print!)
@@ -27,4 +27,4 @@
 
 (prn "dev environment")
 (setup-figwheel)
-(m/init)
+(cdr/init)

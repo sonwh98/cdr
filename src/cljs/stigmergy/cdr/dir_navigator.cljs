@@ -1,4 +1,4 @@
-(ns cdr.dir-navigator)
+(ns stigmergy.cdr.dir-navigator)
 
 (defn toggle [evt]
   (let [element (.-target evt)

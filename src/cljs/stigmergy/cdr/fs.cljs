@@ -1,10 +1,10 @@
-(ns cdr.fs
+(ns stigmergy.cdr.fs
   (:require [clojure.string :as str]
             [clojure.set :as s]
             [clojure.data :as d]
             [clojure.core.async :as a :include-macros true]
             [cljs-await.core :refer [await]]
-            [cdr.util :as util]
+            [stigmergy.cdr.util :as util]
             ))
 
 (defn walk-dir [{:keys [dir on-file] :as params}]

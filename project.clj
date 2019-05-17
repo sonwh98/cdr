@@ -1,4 +1,4 @@
-(defproject  cdr "0.0.1"
+(defproject  stigmergy/cdr "0.0.1"
   :min-lein-version "2.8.3" 
   :dependencies [[org.clojure/clojure "1.10.0"]  
                  [com.kaicode/wocket "0.1.5-SNAPSHOT"]
@@ -22,9 +22,9 @@
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-                :figwheel {:on-jsload "cdr.core/jsload"
+                :figwheel {:on-jsload "stigmergy.cdr.core/jsload"
                            :websocket-host :js-client-host}
-                :compiler {:main cdr.init
+                :compiler {:main stigmergy.cdr.init
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/cdr.js"
                            :output-dir "resources/public/js/compiled/out"
@@ -45,7 +45,7 @@
                            :source-paths ["src/clj" "src/cljc" "env/dev/clj"]}
              :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
                             :source-paths ["src/clj" "src/cljc"]
-                            :main cdr.server
+                            :main stigmergy.cdr.server
                             :aot :all}
 
              :dev [:project/dev]
