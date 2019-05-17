@@ -21,6 +21,7 @@
 
 .sub-dir {
   display: none;
+  cursor: pointer;    
 }
 
 .active {
