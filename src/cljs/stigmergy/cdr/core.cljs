@@ -106,20 +106,6 @@
   (. evt preventDefault)
   (. evt stopPropagation))
 
-
-
-(defn file-item [file]
-  [:a {:class "mdc-list-item " :tabIndex 0
-       :aria-selected "true"
-       :on-click #(let [cm (js/document.querySelector ".CodeMirror")
-                        cm (.. cm -CodeMirror)]
-                    (a/go
-                      (let [[err file-content] (a/<! (await (js/window.pfs.readFile file)))
-                            file-content (util/array-buffer->str file-content)]
-                        (.. cm getDoc (setValue file-content)))))}
-   [:i {:class "material-icons mdc-list-item__graphic" :aria-hidden "true"} "bookmark"]
-   file])
-
 (defn git-input [project-name]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
     (fn [project-name]
