@@ -6,6 +6,7 @@
                  [compojure "1.6.1"]
                  [reagent "0.8.1"]
                  [stigmergy/mr-clean "0.1.0-SNAPSHOT"]
+                 [stigmergy/tily "0.1.8-SNAPSHOT"] 
                  [cljs-await "1.0.2"]
                  [org.clojure/core.async "0.4.490"]
                  [binaryage/devtools "0.9.10"]

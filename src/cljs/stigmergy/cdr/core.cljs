@@ -6,7 +6,7 @@
             [reagent.core :as r]
             [stigmergy.cdr.mdc :as mdc]
             [stigmergy.cdr.fs :as fs]
-            [stigmergy.cdr.util :as util]
+            [stigmergy.tily.js :as util]
             [stigmergy.cdr.git :as git]
             [stigmergy.cdr.dir-navigator :as dir]
             ;;[stigmergy.mr-clean :as r]

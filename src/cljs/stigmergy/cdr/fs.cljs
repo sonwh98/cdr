@@ -4,7 +4,7 @@
             [clojure.data :as d]
             [clojure.core.async :as a :include-macros true]
             [cljs-await.core :refer [await]]
-            [stigmergy.cdr.util :as util]
+            [stigmergy.tily.js :as util]
             ))
 
 (defn walk-dir [{:keys [dir on-file] :as params}]
