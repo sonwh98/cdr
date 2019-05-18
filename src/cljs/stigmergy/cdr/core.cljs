@@ -19,7 +19,12 @@
 
 (def app-state (r/atom {:code-text ""
                         :repl-text ""
-                        :current-ns 'cljs.user}))
+                        :current-ns 'cljs.user
+                        :current-project "cdr"
+                        :projects {"cdr" {:git {:url ""
+                                                :username ""
+                                                :password ""}
+                                          :src-tree nil}}}))
 
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
@@ -108,67 +113,98 @@
   (. evt preventDefault)
   (. evt stopPropagation))
 
-(defn git-input [project-name]
+(defn git-input [state]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
-    (fn [project-name]
-      [:div
-       [:input {:type :text
-                :placeholder "git URL"
-                :style {:width "100%"}
-                :value @value
-                :on-change (fn [evt]
-                             (reset! value (-> evt .-target .-value)))}]
-       [:div.mdc-button {:on-click (fn [evt]
-                                     (let [git-url @value
-                                           repo-name (some-> git-url
-                                                             (str/split "/")
-                                                             last
-                                                             (str/replace ".git" ""))
-                                           dir (str "/" repo-name)
-                                           files (atom [])]
-                                       (reset! project-name repo-name)
-                                       (a/go
-                                         (a/<! (git/clone {:url git-url
-                                                           :dir dir}))
-                                         (a/<! (fs/walk-dir {:dir dir
-                                                             :on-file (fn [file]
-                                                                        (when-not (re-find #".git" file)
-                                                                          (swap! files conj file)))}))
-                                         (let [project-root (fs/mk-project-tree @files)]
-                                           (swap! app-state assoc :project-root project-root)))))} "GET"]])))
+    (fn [state]
+      (let [current-project (:current-project @state)]
+        [:div
+         [:input {:type :text
+                  :placeholder "git URL"
+                  :style {:width "100%"}
+                  :value @value
+                  :on-change (fn [evt]
+                               (reset! value (-> evt .-target .-value)))}]
+         [:div.mdc-button {:on-click (fn [evt]
+                                       (let [git-url @value
+                                             repo-name (some-> git-url
+                                                               (str/split "/")
+                                                               last
+                                                               (str/replace ".git" ""))
+                                             dir (str "/" repo-name)
+                                             files (atom [])]
+
+                                         ;;(reset! project-name repo-name)
+                                         ;;(clojure.set/rename-keys @project )
+                                         
+                                         (a/go
+                                           (a/<! (git/clone {:url git-url
+                                                             :dir dir}))
+                                           (a/<! (fs/walk-dir {:dir dir
+                                                               :on-file (fn [file]
+                                                                          (when-not (re-find #".git" file)
+                                                                            (swap! files conj file)))}))
+                                           (let [project-root (fs/mk-project-tree @files)]
+                                             (swap! state assoc-in
+                                                    [:projects current-project :src-tree]
+                                                    project-root)
+                                             ))))} "GET"]]))))
+
+(defn file-manager [state]
+  (let [hidden? (r/atom false)]
+    (fn [state]
+      (let [current-project (:current-project @state)
+            project (r/cursor state [:projects current-project])
+            src-tree (r/cursor project [:src-tree])]
+        [:div (if @hidden?
+                {:style {:display :none}})
+         [git-input state]
+         [:button {:style {:float :right}
+                   :on-click #(swap! hidden? not)} "<"]
+         [dir/tree {:node src-tree
+                    :on-click (fn [{:keys [name dir-path] :as file}]
+                                (let [cm (js/document.querySelector ".CodeMirror")
+                                      cm (.. cm -CodeMirror)
+                                      dir-path (str/join "/" dir-path)
+                                      file-name (str "/" dir-path "/" name)]
+                                  (a/go
+                                    (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                          file-content (util/array-buffer->str file-content)]
+                                      (.. cm getDoc (setValue file-content))))))
+                    }]]))))
 
 (defn cdr-ui [state]
   (r/create-class
    {:component-did-mount
     (fn [component]
-      (when-let [project-name (:project-name @state)]
-        (fs/walk-dir {:dir (str "/" project-name)
-                      :on-file (fn [file]
-                                 (if-not (re-find #".git" file)
-                                   (swap! state update-in [:files] conj file)))})))
+      #_(when-let [project-name (:project-name @state)]
+          (fs/walk-dir {:dir (str "/" project-name)
+                        :on-file (fn [file]
+                                   (if-not (re-find #".git" file)
+                                     (swap! state update-in [:files] conj file)))})))
     
     :reagent-render
     (fn [state]
       [:div
-       (let [project-name (r/cursor state [:project-name])
-             project-root (r/cursor state [:project-root])]
-         [mdc/drawer {:drawer-header [:div
-                                      [:h3 {:class "mdc-drawer__title"} "Project"]
-                                      [:h6 {:class "mdc-drawer__subtitle"} @project-name]
-                                      [git-input project-name]]
-                      :content [code-area state]
-                      :drawer-content
-                      [dir/tree {:node project-root
-                                 :on-click (fn [{:keys [name dir-path] :as file}]
-                                             (let [cm (js/document.querySelector ".CodeMirror")
-                                                   cm (.. cm -CodeMirror)
-                                                   dir-path (str/join "/" dir-path)
-                                                   file-name (str "/" dir-path "/" name)]
-                                               (a/go
-                                                 (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                                       file-content (util/array-buffer->str file-content)]
-                                                   (.. cm getDoc (setValue file-content))))))
-                                 }]}])
+       [file-manager state]
+       #_(let [project-name (r/cursor state [:project-name])
+               project-root (r/cursor state [:project-root])]
+           [mdc/drawer {:drawer-header [:div
+                                        [:h3 {:class "mdc-drawer__title"} "Project"]
+                                        [:h6 {:class "mdc-drawer__subtitle"} @project-name]
+                                        [git-input project-name]]
+                        :content [code-area state]
+                        :drawer-content
+                        [dir/tree {:node project-root
+                                   :on-click (fn [{:keys [name dir-path] :as file}]
+                                               (let [cm (js/document.querySelector ".CodeMirror")
+                                                     cm (.. cm -CodeMirror)
+                                                     dir-path (str/join "/" dir-path)
+                                                     file-name (str "/" dir-path "/" name)]
+                                                 (a/go
+                                                   (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                                         file-content (util/array-buffer->str file-content)]
+                                                     (.. cm getDoc (setValue file-content))))))
+                                   }]}])
        #_[mdc/tab-bar]
        ])}))
 
