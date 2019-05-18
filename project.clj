@@ -26,17 +26,19 @@
                 :figwheel {:on-jsload "stigmergy.cdr.core/jsload"
                            :websocket-host :js-client-host}
                 :compiler {:main stigmergy.cdr.init
-                           :asset-path "js/compiled/out"
+                           :asset-path "js/compiled/dev"
                            :output-to "resources/public/js/compiled/cdr.js"
-                           :output-dir "resources/public/js/compiled/out"
+                           :output-dir "resources/public/js/compiled/dev"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
-               {:id "min"
-                :source-paths ["src/cljs" "src/cljc"]
-                :compiler {:main cdr.core
-                           :asset-path "js/compiled/out2"
+               {:id "prod"
+                :source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
+                ;; :figwheel {:on-jsload "stigmergy.cdr.core/jsload"
+                ;;            :websocket-host :js-client-host}
+                :compiler {:main stigmergy.cdr.init
+                           :asset-path "js/compiled/prod"
                            :output-to "resources/public/js/compiled/cdr.js"
-                           :output-dir "resources/public/js/compiled/out2"
+                           :output-dir "resources/public/js/compiled/prod"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
                ]}
@@ -44,7 +46,7 @@
   :profiles {:project/dev {:dependencies [[figwheel-sidecar "0.5.18"]
                                           [cider/piggieback "0.4.0"]]
                            :source-paths ["src/clj" "src/cljc" "env/dev/clj"]}
-             :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "min"]]
+             :project/prod {:prep-tasks ["compile" ["cljsbuild" "once" "prod"]]
                             :source-paths ["src/clj" "src/cljc"]
                             :main stigmergy.cdr.server
                             :aot :all}
