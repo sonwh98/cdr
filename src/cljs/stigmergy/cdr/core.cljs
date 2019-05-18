@@ -4,12 +4,14 @@
             [com.kaicode.wocket.client :as ws :refer [process-msg]]
             [taoensso.timbre :as log :include-macros true]
             [reagent.core :as r]
+            [stigmergy.tily.js :as util]
+            
             [stigmergy.cdr.mdc :as mdc]
             [stigmergy.cdr.fs :as fs]
-            [stigmergy.tily.js :as util]
             [stigmergy.cdr.git :as git]
             [stigmergy.cdr.dir-navigator :as dir]
             ;;[stigmergy.mr-clean :as r]
+
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
             [clojure.string :as str]
