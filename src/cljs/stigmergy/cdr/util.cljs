@@ -1,8 +1,5 @@
 (ns stigmergy.cdr.util)
 
-(defn in? [e coll]
-  (boolean (some #(= % e) coll)))
-
 (defn cmp [b a]
   (let [b-count (count b)
         a-count (count a)
