@@ -150,27 +150,41 @@
                                              ))))} "GET"]]))))
 
 (defn file-manager [state]
+  (let [current-project (:current-project @state)
+        project (r/cursor state [:projects current-project])
+        src-tree (r/cursor project [:src-tree])]
+    [:div 
+     [git-input state]
+     [dir/tree {:node src-tree
+                :on-click (fn [{:keys [name dir-path] :as file}]
+                            (let [cm (js/document.querySelector ".CodeMirror")
+                                  cm (.. cm -CodeMirror)
+                                  dir-path (str/join "/" dir-path)
+                                  file-name (str "/" dir-path "/" name)]
+                              (a/go
+                                (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                      file-content (util/array-buffer->str file-content)]
+                                  (.. cm getDoc (setValue file-content))))))
+                }]]))
+
+(defn left-panel [state]
   (let [hidden? (r/atom false)]
     (fn [state]
-      (let [current-project (:current-project @state)
-            project (r/cursor state [:projects current-project])
-            src-tree (r/cursor project [:src-tree])]
-        [:div (if @hidden?
-                {:style {:display :none}})
-         [git-input state]
-         [:button {:style {:float :right}
-                   :on-click #(swap! hidden? not)} "<"]
-         [dir/tree {:node src-tree
-                    :on-click (fn [{:keys [name dir-path] :as file}]
-                                (let [cm (js/document.querySelector ".CodeMirror")
-                                      cm (.. cm -CodeMirror)
-                                      dir-path (str/join "/" dir-path)
-                                      file-name (str "/" dir-path "/" name)]
-                                  (a/go
-                                    (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                          file-content (util/array-buffer->str file-content)]
-                                      (.. cm getDoc (setValue file-content))))))
-                    }]]))))
+      (let [{:keys [width height]} (util/get-dimensions)
+            half-height (- (/ height 2) 10)] 
+        [:div {:style {:background-color :pink}}
+         [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
+                        :display :grid
+                        :grid-template-columns "auto auto" 
+                        :background-color :green
+                        :width height}}
+          [:button {:style {:width "100%"}} "Structure"]
+          [:button {:style {:width "100%"}
+                    :on-click #(swap! hidden? not)} "Project"]]
+         (if @hidden?
+           [:h1 "nothing to see here. move on along"]
+           [file-manager state])])))
+  )
 
 (defn cdr-ui [state]
   (r/create-class
@@ -185,7 +199,7 @@
     :reagent-render
     (fn [state]
       [:div
-       [file-manager state]
+       [left-panel state]
        #_(let [project-name (r/cursor state [:project-name])
                project-root (r/cursor state [:project-root])]
            [mdc/drawer {:drawer-header [:div
