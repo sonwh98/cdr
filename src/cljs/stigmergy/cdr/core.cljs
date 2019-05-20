@@ -84,18 +84,23 @@
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
-                        [:div 
-                         [:textarea#editor {:style {:width "100%"
-                                                    :height 200}}]
-                         [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
-                                                             s-expression (cljs.reader/read-string
-                                                                           (str "(do " txt ")"))
-                                                             r (a/<! (async-eval s-expression))]
-                                                         (prn s-expression)
-                                                         (prn "r=" r)))}
-                          "Eval"]
-                         [mdc/button {:on-click #(reset! code-text "")}
-                          "Clear"]])})))
+                        (let [{:keys [width height]} (util/get-dimensions)]
+                          [:div {:style {:position :relative
+                                         :left 10
+                                         :top 25
+                                         :width width
+                                         :height height}}
+                           [:textarea#editor {:style {:width "100%"
+                                                      :height 200}}]
+                           [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
+                                                               s-expression (cljs.reader/read-string
+                                                                             (str "(do " txt ")"))
+                                                               r (a/<! (async-eval s-expression))]
+                                                           (prn s-expression)
+                                                           (prn "r=" r)))}
+                            "Eval"]
+                           [mdc/button {:on-click #(reset! code-text "")}
+                            "Clear"]]))})))
 
 (defn repl-area [state]
   (let [repl-text (r/cursor state [:repl-text])]
@@ -172,7 +177,10 @@
     (fn [state]
       (let [{:keys [width height]} (util/get-dimensions)
             half-height (- (/ height 2) 10)] 
-        [:div {:style {:background-color :pink}}
+        [:div {:style {:background-color :pink
+                       :position :relative
+                       :width width
+                       :z-index 100}}
          [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
                         :display :grid
                         :grid-template-columns "auto auto" 
@@ -185,7 +193,7 @@
          [:div {:style {:position :relative
                         :left 15}}
           (if @hidden?
-            [:h1 "nothing to see here. move on along"]
+            [:div {:style {:display :none}}]
             [file-manager state]
             )]])))
   )
@@ -202,8 +210,12 @@
     
     :reagent-render
     (fn [state]
-      [:div
+      [:div {:style {:background-color :blue}} 
        [left-panel state]
+       [:div {:style {:position :absolute
+                      :left 15
+                      :top 0}}
+        [code-area state]]
        #_(let [project-name (r/cursor state [:project-name])
                project-root (r/cursor state [:project-root])]
            [mdc/drawer {:drawer-header [:div
