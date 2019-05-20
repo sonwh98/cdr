@@ -181,9 +181,13 @@
           [:button {:style {:width "100%"}} "Structure"]
           [:button {:style {:width "100%"}
                     :on-click #(swap! hidden? not)} "Project"]]
-         (if @hidden?
-           [:h1 "nothing to see here. move on along"]
-           [file-manager state])])))
+
+         [:div {:style {:position :relative
+                        :left 15}}
+          (if @hidden?
+            [:h1 "nothing to see here. move on along"]
+            [file-manager state]
+            )]])))
   )
 
 (defn cdr-ui [state]
