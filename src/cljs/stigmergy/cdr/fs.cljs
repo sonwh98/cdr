@@ -89,29 +89,3 @@
               (attach acc p p))
             {}
             paths)))
-
-(comment
-  (def root {"cdr" [{"resources" [{"public" [{"css" ["codemirror.css" "clojure.css"]}
-                                             {"js" ["clojure.js" "codemirror.js"]}
-                                             "index.html"]}
-
-                                  ]}
-                    {"src" [{"clj" [{"cdr" ["server.clj"]}]}
-                            {"cljs" [{"cdr" ["core.cljs" "mdc.cljs"]}]}]}
-                    "project.clj"
-                    ]})
-  
-  (def files ["/cdr/src/cljc/cdr/fs.cljc"
-              "/cdr/src/cljc/cdr/util.cljc"
-              "/cdr/src/cljc/cdr/foobar.cljc"
-              "/cdr/src/clj/cdr/server.clj"
-              "/cdr/src/cljs/cdr/core.cljs"
-              "/cdr/resources/public/js/clojure.js"
-              "/cdr/resources/public/js/parinfer.js"
-              "/cdr/resources/public/css/clojure.css"
-              "/cdr/resources/public/css/dark.css"
-              ])
-
-  (mk-project-tree files)
-  (mk-node "/cdr/src/cljc/cdr/fs.cljc")
-  )
