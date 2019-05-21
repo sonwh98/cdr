@@ -81,7 +81,8 @@
         codemirror (atom nil)]
     (r/create-class
      {:component-did-mount (fn [this]
-                             (let [editor (js/document.getElementById "editor")
+                             (let [{:keys [width height]} (util/get-dimensions)
+                                   editor (js/document.getElementById "editor")
                                    cm (js/CodeMirror.fromTextArea editor #js{:lineNumbers true
                                                                              :mode "text/x-clojure"
                                                                              :autoCloseBrackets true
@@ -89,18 +90,18 @@
                                                                              :theme "dracula"
                                                                              :keyMap "emacs"
                                                                              })]
+                               (.. cm (setSize nil height))
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
                         (let [{:keys [width height]} (util/get-dimensions)]
-                          [:div {:style {:position :relative
-                                         :left 10
-                                         :top 25
+                          [:div {:style {:position :absolute
+                                         :left 20
                                          :width "100%"
-                                         :height "100%"}
+                                         ;;:background-color :blue
+                                         }
                                  :on-click close-project-manager}
-                           [:textarea#editor {:style {:width "100%"
-                                                      :height "100%"}}]
+                           [:textarea#editor]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
                                                                s-expression (cljs.reader/read-string
                                                                              (str "(do " txt ")"))
@@ -108,8 +109,7 @@
                                                            (prn s-expression)
                                                            (prn "r=" r)))}
                             "Eval"]
-                           [mdc/button {:on-click #(reset! code-text "")}
-                            "Clear"]]))})))
+                           ]))})))
 
 (defn repl-area [state]
   (let [repl-text (r/cursor state [:repl-text])]
@@ -195,70 +195,26 @@
 (defn left-panel [state]
   (let [{:keys [width height]} (util/get-dimensions)
         half-height (- (/ height 2) 10)] 
-    [:div {:style {:background-color :pink
+    [:div {:style {;;:background-color :pink
                    :position :absolute
-                   :width 20
-                   :height "100%"
                    :left 0
                    :top 0
-                   :z-index 10}}
+                   ;;:z-index 10
+                   }}
      [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
                     :display :grid
                     :grid-template-columns "auto auto" 
-                    :background-color :green
-                    :width height}}
-      [:button {:style {:width "100%"}} "Structure"]
-      [:button {:style {:width "100%"}
-                :on-click toggle-project-manager-visibility} "Project"]]
-     ])
-  )
+                                        ;:background-color :green
+                    :width height
+                    :height 20}}
+      [:button  "Structure"]
+      [:button {:on-click toggle-project-manager-visibility} "Project"]]]))
 
 (defn cdr-ui [state]
-  (r/create-class
-   {:component-did-mount
-    (fn [component]
-      #_(when-let [project-name (:project-name @state)]
-          (fs/walk-dir {:dir (str "/" project-name)
-                        :on-file (fn [file]
-                                   (if-not (re-find #".git" file)
-                                     (swap! state update-in [:files] conj file)))})))
-    
-    :reagent-render
-    (fn [state]
-      [:div {:style {:background-color :green
-                     :width "100%"
-                     :height "100%"}} 
-       [left-panel state]
-       [project-manager state]
-       [:div {:style {:position :absolute
-                      :left 15
-                      :top 0
-                      :background-color :blue
-                      :width "100%"
-                      :height "100%"}}
-        [code-area state]
-        ]
-       #_(let [project-name (r/cursor state [:project-name])
-               project-root (r/cursor state [:project-root])]
-           [mdc/drawer {:drawer-header [:div
-                                        [:h3 {:class "mdc-drawer__title"} "Project"]
-                                        [:h6 {:class "mdc-drawer__subtitle"} @project-name]
-                                        [git-input project-name]]
-                        :content [code-area state]
-                        :drawer-content
-                        [dir/tree {:node project-root
-                                   :on-click (fn [{:keys [name dir-path] :as file}]
-                                               (let [cm (js/document.querySelector ".CodeMirror")
-                                                     cm (.. cm -CodeMirror)
-                                                     dir-path (str/join "/" dir-path)
-                                                     file-name (str "/" dir-path "/" name)]
-                                                 (a/go
-                                                   (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                                         file-content (util/array-buffer->str file-content)]
-                                                     (.. cm getDoc (setValue file-content))))))
-                                   }]}])
-       #_[mdc/tab-bar]
-       ])}))
+  [:div
+   [left-panel state]
+   [project-manager state]
+   [code-area state]])
 
 (defn init []
   (set! (.-fs js/window) (js/LightningFS. "fs"))
