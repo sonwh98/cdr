@@ -24,7 +24,9 @@
                         :projects {"cdr" {:git {:url ""
                                                 :username ""
                                                 :password ""}
-                                          :src-tree nil}}}))
+                                          :src-tree nil}}
+                        :project-manager {:visible? true}
+                        }))
 
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
@@ -88,10 +90,10 @@
                           [:div {:style {:position :relative
                                          :left 10
                                          :top 25
-                                         :width width
-                                         :height height}}
+                                         :width "100%"
+                                         :height "100%"}}
                            [:textarea#editor {:style {:width "100%"
-                                                      :height 200}}]
+                                                      :height "100%"}}]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
                                                                s-expression (cljs.reader/read-string
                                                                              (str "(do " txt ")"))
@@ -154,48 +156,52 @@
                                                     project-root)
                                              ))))} "GET"]]))))
 
-(defn file-manager [state]
+(defn project-manager [state]
   (let [current-project (:current-project @state)
         project (r/cursor state [:projects current-project])
-        src-tree (r/cursor project [:src-tree])]
-    [:div 
-     [git-input state]
-     [dir/tree {:node src-tree
-                :on-click (fn [{:keys [name dir-path] :as file}]
-                            (let [cm (js/document.querySelector ".CodeMirror")
-                                  cm (.. cm -CodeMirror)
-                                  dir-path (str/join "/" dir-path)
-                                  file-name (str "/" dir-path "/" name)]
-                              (a/go
-                                (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                      file-content (util/array-buffer->str file-content)]
-                                  (.. cm getDoc (setValue file-content))))))
-                }]]))
+        src-tree (r/cursor project [:src-tree])
+        visible? (-> @state :project-manager :visible?)]
+    (if visible?
+      [:div {:style {:position :absolute
+                     :left 20
+                     :top 0
+                     :z-index 20
+                     :background-color :red
+                     :height "100%"
+                     :width 200
+                     :overflow-x :scroll}}
+       [git-input state]
+       [dir/tree {:node src-tree
+                  :on-click (fn [{:keys [name dir-path] :as file}]
+                              (let [cm (js/document.querySelector ".CodeMirror")
+                                    cm (.. cm -CodeMirror)
+                                    dir-path (str/join "/" dir-path)
+                                    file-name (str "/" dir-path "/" name)]
+                                (a/go
+                                  (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                        file-content (util/array-buffer->str file-content)]
+                                    (.. cm getDoc (setValue file-content))))))
+                  }]])))
 
 (defn left-panel [state]
-  (let [hidden? (r/atom false)]
-    (fn [state]
-      (let [{:keys [width height]} (util/get-dimensions)
-            half-height (- (/ height 2) 10)] 
-        [:div {:style {:background-color :pink
-                       :position :relative
-                       :width width
-                       :z-index 100}}
-         [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
-                        :display :grid
-                        :grid-template-columns "auto auto" 
-                        :background-color :green
-                        :width height}}
-          [:button {:style {:width "100%"}} "Structure"]
-          [:button {:style {:width "100%"}
-                    :on-click #(swap! hidden? not)} "Project"]]
-
-         [:div {:style {:position :relative
-                        :left 15}}
-          (if @hidden?
-            [:div {:style {:display :none}}]
-            [file-manager state]
-            )]])))
+  (let [{:keys [width height]} (util/get-dimensions)
+        half-height (- (/ height 2) 10)] 
+    [:div {:style {:background-color :pink
+                   :position :absolute
+                   :width 20
+                   :height "100%"
+                   :left 0
+                   :top 0
+                   :z-index 10}}
+     [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
+                    :display :grid
+                    :grid-template-columns "auto auto" 
+                    :background-color :green
+                    :width height}}
+      [:button {:style {:width "100%"}} "Structure"]
+      [:button {:style {:width "100%"}
+                :on-click #(swap! state update-in [:project-manager :visible?] not)} "Project"]]
+     ])
   )
 
 (defn cdr-ui [state]
@@ -210,12 +216,19 @@
     
     :reagent-render
     (fn [state]
-      [:div {:style {:background-color :blue}} 
+      [:div {:style {:background-color :green
+                     :width "100%"
+                     :height "100%"}} 
        [left-panel state]
+       [project-manager state]
        [:div {:style {:position :absolute
                       :left 15
-                      :top 0}}
-        [code-area state]]
+                      :top 0
+                      :background-color :blue
+                      :width "100%"
+                      :height "100%"}}
+        [code-area state]
+        ]
        #_(let [project-name (r/cursor state [:project-name])
                project-root (r/cursor state [:project-root])]
            [mdc/drawer {:drawer-header [:div
