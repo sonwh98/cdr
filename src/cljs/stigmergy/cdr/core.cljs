@@ -70,6 +70,12 @@
                                         ))))
                     c)))
 
+(defn toggle-project-manager-visibility []
+  (swap! app-state update-in [:project-manager :visible?] not))
+
+(defn close-project-manager []
+  (swap! app-state assoc-in [:project-manager :visible?] false))
+
 (defn code-area [state]
   (let [code-text (r/cursor state [:code-text])
         codemirror (atom nil)]
@@ -91,7 +97,8 @@
                                          :left 10
                                          :top 25
                                          :width "100%"
-                                         :height "100%"}}
+                                         :height "100%"}
+                                 :on-click close-project-manager}
                            [:textarea#editor {:style {:width "100%"
                                                       :height "100%"}}]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
@@ -202,7 +209,7 @@
                     :width height}}
       [:button {:style {:width "100%"}} "Structure"]
       [:button {:style {:width "100%"}
-                :on-click #(swap! state update-in [:project-manager :visible?] not)} "Project"]]
+                :on-click toggle-project-manager-visibility} "Project"]]
      ])
   )
 
