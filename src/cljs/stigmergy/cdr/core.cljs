@@ -97,9 +97,7 @@
                         (let [{:keys [width height]} (util/get-dimensions)]
                           [:div {:style {:position :absolute
                                          :left 20
-                                         :width "100%"
-                                         ;;:background-color :blue
-                                         }
+                                         :width "100%"}
                                  :on-click close-project-manager}
                            [:textarea#editor]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
@@ -175,7 +173,7 @@
                      :left 20
                      :top 0
                      :z-index 20
-                     :background-color :red
+                     :background-color :white
                      :height "100%"
                      :width width
                      :overflow-x :scroll}}
@@ -195,16 +193,12 @@
 (defn left-panel [state]
   (let [{:keys [width height]} (util/get-dimensions)
         half-height (- (/ height 2) 10)] 
-    [:div {:style {;;:background-color :pink
-                   :position :absolute
+    [:div {:style {:position :absolute
                    :left 0
-                   :top 0
-                   ;;:z-index 10
-                   }}
+                   :top 0}}
      [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
                     :display :grid
                     :grid-template-columns "auto auto" 
-                                        ;:background-color :green
                     :width height
                     :height 20}}
       [:button  "Structure"]
