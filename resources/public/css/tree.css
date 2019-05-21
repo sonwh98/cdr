@@ -4,6 +4,7 @@
     -moz-user-select: none; /* Firefox 2+ */
     -ms-user-select: none; /* IE 10+ */
     user-select: none;
+    white-space: nowrap;
 }
 
 .dir::before {
@@ -22,6 +23,7 @@
 .sub-dir {
   display: none;
   cursor: pointer;    
+  white-space: nowrap;        
 }
 
 .active {
