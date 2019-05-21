@@ -160,7 +160,9 @@
   (let [current-project (:current-project @state)
         project (r/cursor state [:projects current-project])
         src-tree (r/cursor project [:src-tree])
-        visible? (-> @state :project-manager :visible?)]
+        visible? (-> @state :project-manager :visible?)
+        {:keys [width height]} (util/get-dimensions)
+        width (/ width 4)]
     (if visible?
       [:div {:style {:position :absolute
                      :left 20
@@ -168,7 +170,7 @@
                      :z-index 20
                      :background-color :red
                      :height "100%"
-                     :width 200
+                     :width width
                      :overflow-x :scroll}}
        [git-input state]
        [dir/tree {:node src-tree
