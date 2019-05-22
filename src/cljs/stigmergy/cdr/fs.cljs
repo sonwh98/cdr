@@ -29,20 +29,14 @@
 
 (defn mk-node
   ([dir-path files complete-path]
-   (let [dir-path (if (string? dir-path)
-                    (-> dir-path (str/split #"/") rest vec)
-                    dir-path)
-         files (mapv (fn [f]
+   (let [files (mapv (fn [f]
                        {:name f
                         :dir-path (-> complete-path drop-last vec)})
                      files)
          tree (assoc-in {} dir-path files)]
      (map-value->vector tree)))
   ([file-path complete-path]
-   (let [file-path (if (string? file-path)
-                     (-> file-path (str/split #"/") rest)
-                     file-path)
-         file (last file-path)
+   (let [file (last file-path)
          dir-path (-> file-path drop-last vec)]
      (mk-node dir-path [file] complete-path))))
 
