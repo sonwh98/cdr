@@ -1,6 +1,8 @@
-(ns stigmergy.cdr.dir-navigator)
+(ns stigmergy.cdr.dir-navigator
+  (:require [stigmergy.tily :as tily]
+            [reagent.core :as r]))
 
-(defn toggle [evt]
+(defn toggle [node evt]
   (let [element (.-target evt)
         parent (.-parentElement element)]
     (.. parent (querySelector ".sub-dir") -classList (toggle "active"))))
@@ -14,18 +16,95 @@
 (defn dir [node on-click]
   [:li
    [:span {:class "dir"
-           :on-click toggle} (get-name node)]
+           :on-click #(toggle node %)} (get-name @node)]
    [:ul {:class "sub-dir"
          :style {:list-style-type :none}}
-    (for [c (get-children node)]
-      (with-meta (if-let [file-name (:name c)]
-                   [:li {:on-click #(on-click c)} file-name]
-                   [dir c on-click])
-        {:key (str c)}))]])
+    (let [index-children (-> @node get-children tily/with-index)]
+      (for [[index c] index-children
+            :let [k (-> @node keys first)
+                  child (r/cursor node [k index])]]
+        (with-meta (if-let [file-name (:name c)]
+                     [:li {:on-click #(on-click c)} file-name]
+                     [dir child on-click])
+          {:key (str c)})))]])
 
 (defn tree [{:keys [node on-click] }]
   (when-not (empty? @node)
     [:ul {:style {:list-style-type :none
                   :margin 0
                   :padding 0}}
-     [dir @node on-click]]))
+     [dir node on-click]]))
+
+(comment
+  {"cdr"
+   [{"env"
+     [{"dev"
+       [{"clj" [{:name "user.clj", :dir-path ["cdr" "env" "dev" "clj"]}]}
+        {"cljs"
+         [{"stigmergy"
+           [{"cdr"
+             [{:name "init.cljs",
+               :dir-path
+               ["cdr" "env" "dev" "cljs" "stigmergy" "cdr"]}]}]}]}]}]}
+    {"resources"
+     [{"public"
+       [{"css"
+         [{:name "codemirror.css",
+           :dir-path ["cdr" "resources" "public" "css"]}
+          {:name "docs.css",
+           :dir-path ["cdr" "resources" "public" "css"]}
+          {:name "dracula.css",
+           :dir-path ["cdr" "resources" "public" "css"]}
+          {:name "material-components-web.min.css",
+           :dir-path ["cdr" "resources" "public" "css"]}
+          {:name "tree.css",
+           :dir-path ["cdr" "resources" "public" "css"]}]}
+        {"js"
+         [{"keymap"
+           [{:name "emacs.js",
+             :dir-path ["cdr" "resources" "public" "js" "keymap"]}]}
+          {:name "active-line.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "clojure-parinfer.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "clojure.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "closebrackets.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "codemirror.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "lightning-fs.min.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "matchbrackets.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "material-components-web.min.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "parinfer-codemirror.js",
+           :dir-path ["cdr" "resources" "public" "js"]}
+          {:name "parinfer.js",
+           :dir-path ["cdr" "resources" "public" "js"]}]}
+        {:name "index.html", :dir-path ["cdr" "resources" "public"]}]}]}
+    {"src"
+     [{"clj"
+       [{"stigmergy"
+         [{"cdr"
+           [{:name "server.clj",
+             :dir-path ["cdr" "src" "clj" "stigmergy" "cdr"]}]}]}]}
+      {"cljs"
+       [{"stigmergy"
+         [{"cdr"
+           [{:name "dir_navigator.cljs",
+             :dir-path ["cdr" "src" "cljs" "stigmergy" "cdr"]}
+            {:name "fs.cljs",
+             :dir-path ["cdr" "src" "cljs" "stigmergy" "cdr"]}
+            {:name "mdc.cljs",
+             :dir-path ["cdr" "src" "cljs" "stigmergy" "cdr"]}
+            {:name "util.cljs",
+             :dir-path ["cdr" "src" "cljs" "stigmergy" "cdr"]}
+            {:name "core.cljs",
+             :dir-path ["cdr" "src" "cljs" "stigmergy" "cdr"]}]}]}]}]}
+    {:name "Dockerfile", :dir-path ["cdr"]}
+    {:name "build.sh", :dir-path ["cdr"]}
+    {:name "README.md", :dir-path ["cdr"]}
+    {:name "project.clj", :dir-path ["cdr"]}]}
+  )
