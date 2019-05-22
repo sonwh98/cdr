@@ -5,6 +5,7 @@
 (defn toggle [node evt]
   (let [element (.-target evt)
         parent (.-parentElement element)]
+    (prn "node=" @node)
     (.. parent (querySelector ".sub-dir") -classList (toggle "active"))))
 
 (defn get-name [node]
@@ -20,13 +21,13 @@
    [:ul {:class "sub-dir"
          :style {:list-style-type :none}}
     (let [index-children (-> @node get-children tily/with-index)]
-      (for [[index c] index-children
-            :let [k (-> @node keys first)
-                  child (r/cursor node [k index])]]
-        (with-meta (if-let [file-name (:name c)]
-                     [:li {:on-click #(on-click c)} file-name]
-                     [dir child on-click])
-          {:key (str c)})))]])
+      (doall (for [[index c] index-children
+                   :let [k (-> @node keys first)
+                         child (r/cursor node [k index])]]
+               (with-meta (if-let [file-name (:name c)]
+                            [:li {:on-click #(on-click c)} file-name]
+                            [dir child on-click])
+                 {:key (str c)}))))]])
 
 (defn tree [{:keys [node on-click] }]
   (when-not (empty? @node)
