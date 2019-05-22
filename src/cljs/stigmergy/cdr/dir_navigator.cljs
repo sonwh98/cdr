@@ -5,7 +5,7 @@
 (defn toggle [node evt]
   (let [element (.-target evt)
         parent (.-parentElement element)]
-    (prn "node=" @node)
+    (swap! node update :visible? not)
     (.. parent (querySelector ".sub-dir") -classList (toggle "active"))))
 
 (defn get-name [node]
@@ -18,7 +18,9 @@
   [:li
    [:span {:class "dir"
            :on-click #(toggle node %)} (get-name @node)]
-   [:ul {:class "sub-dir"
+   [:ul {:class (if (:visible? @node)
+                  "sub-dir active"
+                  "sub-dir")
          :style {:list-style-type :none}}
     (let [index-children (-> @node get-children tily/with-index)]
       (doall (for [[index c] index-children
