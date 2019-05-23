@@ -34,6 +34,8 @@
 (defn tree [{:keys [node on-click] }]
   (when-not (empty? @node)
     [:ul {:style {:list-style-type :none
+                  :overflow :scroll
+                  :height "100%"
                   :margin 0
                   :padding 0}}
      [dir node on-click]]))
