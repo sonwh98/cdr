@@ -161,34 +161,54 @@
                                                     project-root)
                                              ))))} "GET"]]))))
 
+
+
 (defn project-manager [state]
-  (let [current-project (:current-project @state)
-        project (r/cursor state [:projects current-project])
-        src-tree (r/cursor project [:src-tree])
-        visible? (-> @state :project-manager :visible?)
-        {:keys [width height]} (util/get-dimensions)
-        width (/ width 4)]
-    (if visible?
-      [:div {:style {:position :absolute
-                     :left 20
-                     :top 0
-                     :z-index 20
-                     :background-color :white
-                     :height "100%"
-                     :width width
-                     :overflow-x :scroll}}
-       [git-input state]
-       [dir/tree {:node src-tree
-                  :on-click (fn [{:keys [name dir-path] :as file}]
-                              (let [cm (js/document.querySelector ".CodeMirror")
-                                    cm (.. cm -CodeMirror)
-                                    dir-path (str/join "/" dir-path)
-                                    file-name (str "/" dir-path "/" name)]
-                                (a/go
-                                  (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                        file-content (util/array-buffer->str file-content)]
-                                    (.. cm getDoc (setValue file-content))))))
-                  }]])))
+  (let [{:keys [width height]} (util/get-dimensions)
+        min-width (/ width 4)
+        resize (fn [evt]
+                 (let [x (.-clientX evt)]
+                   (if (< x min-width)
+                     (swap! state assoc-in [:project-manager :width] min-width)
+                     (swap! state assoc-in [:project-manager :width] x))))
+        resize-gripper (fn []
+                         [:div {:draggable true
+                                :style {:position :absolute
+                                        :cursor :ew-resize
+                                        :top 0
+                                        :right 0
+                                        :width 5
+                                        :height "100%"}
+                                :on-drag resize
+                                :on-drag-end resize}])]
+    (fn [state]
+      (let [current-project (:current-project @state)
+            project (r/cursor state [:projects current-project])
+            src-tree (r/cursor project [:src-tree])
+            visible? (-> @state :project-manager :visible?)
+            width (-> @state :project-manager :width)]
+        (if visible?
+          [:div {:style {:position :absolute
+                         :left 20
+                         :top 0
+                         :z-index 20
+                         :background-color :white
+                         :height "100%"
+                         :width width
+                         :overflow-x :hidden
+                         :overflow-y :hidden}}
+           [git-input state]
+           [dir/tree {:node src-tree
+                      :on-click (fn [{:keys [name dir-path] :as file}]
+                                  (let [cm (js/document.querySelector ".CodeMirror")
+                                        cm (.. cm -CodeMirror)
+                                        dir-path (str/join "/" dir-path)
+                                        file-name (str "/" dir-path "/" name)]
+                                    (a/go
+                                      (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                            file-content (util/array-buffer->str file-content)]
+                                        (.. cm getDoc (setValue file-content))))))}]
+           [resize-gripper]])))))
 
 (defn left-panel [state]
   (let [{:keys [width height]} (util/get-dimensions)
