@@ -4,6 +4,7 @@
             [com.kaicode.wocket.client :as ws :refer [process-msg]]
             [taoensso.timbre :as log :include-macros true]
             [reagent.core :as r]
+            [reagent.dom :as dom]
             [stigmergy.tily.js :as util]
             
             [stigmergy.cdr.mdc :as mdc]
@@ -17,6 +18,26 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]))
 
+(defn menu-item [{:keys [label on-click]}]
+  [:a {:href "#"
+       :on-click on-click} label])
+
+(defn context-menu [context-menu-state]
+  (prn "context-menu-state=" @context-menu-state)
+  (when (:visible? @context-menu-state)
+    [:div {:class "vertical-menu"
+           :style {:position :absolute
+                   :left (:x @context-menu-state)
+                   :top (:y @context-menu-state)}}
+     #_[:a {:href "#", :class "active"} "Home"]
+     [menu-item {:label "checkout"
+                 :on-click #(js/alert "checkout")}]
+     [menu-item {:label "branch"}]
+     [menu-item {:label "commit"}]
+     [menu-item {:label "push"}]
+     [menu-item {:label "reset"}]]))
+
+
 (def app-state (r/atom {:code-text ""
                         :repl-text ""
                         :current-ns 'cljs.user
@@ -25,8 +46,27 @@
                                                 :username ""
                                                 :password ""}
                                           :src-tree nil}}
-                        :project-manager {:visible? true}
+                        :project-manager {:visible? true
+                                          :context-menu {:x 0 :y 0
+                                                         :visible? false}}
+                        :dialog {:visible? false
+                                 :content nil}
                         }))
+
+(defn dialog [dialog-state]
+  (when (:visible? @dialog-state)
+    [:div {:id "myModal", :class "modal"
+           :style {:display :block}}  
+     [:div {:class "modal-content"}
+      [:span {:class "close"} "×"]
+      [:p "Some text in the Modal.."]]]))
+
+(comment
+  (swap! app-state assoc-in [:project-manager :context-menu :visible?] true)
+  (swap! app-state update-in [:project-manager :context-menu :visible?] not)
+  (swap! app-state update-in [:dialog :visible?] not)
+  (-> @app-state :project-manager :context-menu)
+  )
 
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
@@ -163,6 +203,7 @@
 
 
 
+
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
         min-width (/ width 4)
@@ -181,34 +222,77 @@
                                         :height "100%"}
                                 :on-drag resize
                                 :on-drag-end resize}])]
-    (fn [state]
-      (let [current-project (:current-project @state)
-            project (r/cursor state [:projects current-project])
-            src-tree (r/cursor project [:src-tree])
-            visible? (-> @state :project-manager :visible?)
-            width (-> @state :project-manager :width)]
-        (if visible?
-          [:div {:style {:position :absolute
-                         :left 20
-                         :top 0
-                         :z-index 20
-                         :background-color :white
-                         :height "100%"
-                         :width width
-                         :overflow-x :hidden
-                         :overflow-y :hidden}}
-           [git-input state]
-           [dir/tree {:node src-tree
-                      :on-click (fn [{:keys [name dir-path] :as file}]
-                                  (let [cm (js/document.querySelector ".CodeMirror")
-                                        cm (.. cm -CodeMirror)
-                                        dir-path (str/join "/" dir-path)
-                                        file-name (str "/" dir-path "/" name)]
-                                    (a/go
-                                      (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                            file-content (util/array-buffer->str file-content)]
-                                        (.. cm getDoc (setValue file-content))))))}]
-           [resize-gripper]])))))
+    (r/create-class {:component-did-mount (fn [this-component]
+                                            (let [el (dom/dom-node this-component)
+                                                  timer-id (atom nil)
+                                                  show-context-menu (fn [evt]
+                                                                      (let [x (.-clientX evt)
+                                                                            y (.-clientY evt)]
+                                                                        (prn "x=" x )
+                                                                        (prn "y=" y)
+                                                                        (swap! app-state update-in
+                                                                               [:project-manager
+                                                                                :context-menu]
+                                                                               (fn [context-menu]
+                                                                                 (-> context-menu
+                                                                                     (assoc :visible? true)
+                                                                                     (assoc :x x)
+                                                                                     (assoc :y y)))))
+                                                                      (.. evt preventDefault)
+                                                                      (prn "show context menu"))]
+                                              (.. el (addEventListener
+                                                      "contextmenu"
+                                                      show-context-menu))
+                                              (.. el (addEventListener
+                                                      "mousedown"
+                                                      (fn [evt]
+                                                        (let [id (js/window.setTimeout #(show-context-menu evt)
+                                                                                       1000)]
+                                                          (reset! timer-id id)))))
+
+                                              (.. el (addEventListener
+                                                      "mouseup"
+                                                      (fn [evt]
+                                                        (swap! app-state assoc-in [:project-manager :context-menu :visible?] false)
+                                                        (when-not (nil? @timer-id)
+                                                          (js/clearTimeout @timer-id))
+                                                        )))
+                                              )
+                                            )
+                     :reagent-render (fn [state]
+                                       (let [current-project (:current-project @state)
+                                             project (r/cursor state [:projects current-project])
+                                             context-menu-state (r/cursor state [:project-manager :context-menu])
+                                             dialog-state (r/cursor state [:dialog])
+                                             src-tree (r/cursor project [:src-tree])
+                                             visible? (-> @state :project-manager :visible?)
+                                             width (-> @state :project-manager :width)]
+                                         (if visible?
+                                           [:div {:style {:position :absolute
+                                                          :left 20
+                                                          :top 0
+                                                          :z-index 20
+                                                          :background-color :white
+                                                          :height "100%"
+                                                          :width width
+                                                          :overflow-x :hidden
+                                                          :overflow-y :hidden}}
+                                            ;;[(-> @state :project-manager :context-menu :menu)]
+                                            [context-menu context-menu-state]
+                                            [dialog dialog-state]
+                                            [git-input state]
+                                            
+                                            [dir/tree {:node src-tree
+                                                       :on-click (fn [{:keys [name dir-path] :as file}]
+                                                                   (let [cm (js/document.querySelector ".CodeMirror")
+                                                                         cm (.. cm -CodeMirror)
+                                                                         dir-path (str/join "/" dir-path)
+                                                                         file-name (str "/" dir-path "/" name)]
+                                                                     (a/go
+                                                                       (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                                                             file-content (util/array-buffer->str file-content)]
+                                                                         (.. cm getDoc (setValue file-content))))))}]
+                                            [resize-gripper]])))})))
 
 (defn left-panel [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -242,5 +326,6 @@
 (defmethod process-msg :chat-broadcast [[_ msg]]
   (prn "from clj " msg)
   (swap! app-state assoc :repl-text msg))
+
 
 
