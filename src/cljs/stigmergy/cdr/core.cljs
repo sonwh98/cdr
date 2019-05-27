@@ -18,26 +18,6 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]))
 
-(defn menu-item [{:keys [label on-click]}]
-  [:a {:href "#"
-       :on-click on-click} label])
-
-(defn context-menu [context-menu-state]
-  (prn "context-menu-state=" @context-menu-state)
-  (when (:visible? @context-menu-state)
-    [:div {:class "vertical-menu"
-           :style {:position :absolute
-                   :left (:x @context-menu-state)
-                   :top (:y @context-menu-state)}}
-     #_[:a {:href "#", :class "active"} "Home"]
-     [menu-item {:label "checkout"
-                 :on-click #(js/alert "checkout")}]
-     [menu-item {:label "branch"}]
-     [menu-item {:label "commit"}]
-     [menu-item {:label "push"}]
-     [menu-item {:label "reset"}]]))
-
-
 (def app-state (r/atom {:code-text ""
                         :repl-text ""
                         :current-ns 'cljs.user
@@ -53,12 +33,32 @@
                                  :content nil}
                         }))
 
+(defn menu-item [{:keys [label on-click]}]
+  [:a {:href "#"
+       :on-click on-click} label])
+
+(defn context-menu [context-menu-state]
+  (prn "context-menu-state=" @context-menu-state)
+  (when (:visible? @context-menu-state)
+    [:div {:class "vertical-menu"
+           :style {:position :absolute
+                   :left (:x @context-menu-state)
+                   :top (:y @context-menu-state)}}
+     #_[:a {:href "#", :class "active"} "Home"]
+     [menu-item {:label "checkout"
+                 :on-click #(swap! app-state assoc-in [:dialog :visible?] true)}]
+     [menu-item {:label "branch"}]
+     [menu-item {:label "commit"}]
+     [menu-item {:label "push"}]
+     [menu-item {:label "reset"}]]))
+
 (defn dialog [dialog-state]
   (when (:visible? @dialog-state)
     [:div {:id "myModal", :class "modal"
            :style {:display :block}}  
      [:div {:class "modal-content"}
-      [:span {:class "close"} "×"]
+      [:span {:class "close"
+              :on-click #(swap! dialog-state assoc :visible? false)} "×"]
       [:p "Some text in the Modal.."]]]))
 
 (comment
