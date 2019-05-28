@@ -247,24 +247,24 @@
 (defn ts []
   (.getTime (js/Date.)))
 
-(def dispatchLongPress (let [mouse-up-chan (a/chan (a/sliding-buffer 1))
-                             mouse-down-chan (a/chan (a/sliding-buffer 1))]
-                         (a/go-loop [previous-evt nil]
-                           (let [[[dom-evt k timestamp :as evt] ch] (a/alts! [mouse-up-chan mouse-down-chan])]
-                             (when (= :cancel-press k)
-                               (let [timestamp0 (last previous-evt)
-                                     diff (- timestamp timestamp0)
-                                     el (.-target dom-evt)]
-                                 (when (>= diff 1000)
-                                   (log/info "press")
-                                   (.. el (dispatchEvent (js/MouseEvent. "longpress" dom-evt))))))
-                             (recur evt)))
-                         
-                         (fn [el]
-                           (.. el (addEventListener "mousedown"
-                                                    #(a/put! mouse-down-chan [% :press (ts)])))
-                           (.. el (addEventListener "mouseup"
-                                                    #(a/put! mouse-up-chan [% :cancel-press (ts)]))))))
+(def create-long-press-event (let [mouse-up-chan (a/chan (a/sliding-buffer 1))
+                                   mouse-down-chan (a/chan (a/sliding-buffer 1))]
+                               (a/go-loop [previous-evt nil]
+                                 (let [[[dom-evt k timestamp :as evt] ch] (a/alts! [mouse-up-chan mouse-down-chan])]
+                                   (when (= :cancel-press k)
+                                     (let [timestamp0 (last previous-evt)
+                                           diff (- timestamp timestamp0)
+                                           el (.-target dom-evt)]
+                                       (when (>= diff 1000)
+                                         (log/info "press")
+                                         (.. el (dispatchEvent (js/MouseEvent. "longpress" dom-evt))))))
+                                   (recur evt)))
+                               
+                               (fn [el]
+                                 (.. el (addEventListener "mousedown"
+                                                          #(a/put! mouse-down-chan [% :press (ts)])))
+                                 (.. el (addEventListener "mouseup"
+                                                          #(a/put! mouse-up-chan [% :cancel-press (ts)]))))))
 
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -292,7 +292,7 @@
                                                                 (show-context-menu x y))]
                                               (.. el (addEventListener "contextmenu" cm-handler))
                                               (.. el (addEventListener "longpress" cm-handler))
-                                              (dispatchLongPress el)))
+                                              (create-long-press-event el)))
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
