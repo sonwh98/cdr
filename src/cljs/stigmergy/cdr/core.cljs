@@ -18,10 +18,13 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]))
 
+#_(set! (.-hello (.-prototype js/HTMLElement)) (fn [] "hello"))
+
 (def app-state (r/atom {:code-text ""
                         :repl-text ""
                         :current-ns 'cljs.user
                         :current-project "cdr"
+                        :long-press-start? false
                         :projects {"cdr" {:git {:url ""
                                                 :username ""
                                                 :password ""}
@@ -33,9 +36,25 @@
                                  :content nil}
                         }))
 
+(defn hide-context-menu []
+  (swap! app-state assoc-in [:project-manager :context-menu :visible?] false))
+
+(defn show-context-menu [x y]
+  (swap! app-state update-in
+         [:project-manager
+          :context-menu]
+         (fn [context-menu]
+           (-> context-menu
+               (assoc :visible? true)
+               (assoc :x x)
+               (assoc :y y))))
+  (prn "show-context-menu " x y))
+
 (defn menu-item [{:keys [label on-click]}]
   [:a {:href "#"
-       :on-click on-click} label])
+       :on-click #(do
+                    (hide-context-menu)
+                    (on-click %))} label])
 
 (defn context-menu [context-menu-state]
   (prn "context-menu-state=" @context-menu-state)
@@ -202,7 +221,50 @@
                                              ))))} "GET"]]))))
 
 
+(defn start-long-press [on-long-press]
+  (a/go
+    (prn "press")
+    (swap! app-state assoc :long-press-start? true)
+    (a/<! (a/timeout 1000))
+    (if (-> @app-state :long-press-start?)
+      (on-long-press)
+      (prn "press cancelled")
+      )))
 
+(defn cancel-long-press [evt]
+  (prn "press cancel1")
+  (swap! app-state assoc :long-press-start? false)
+  #_(a/go
+      (a/<! (a/timeout 1000))
+      (swap! app-state assoc-in
+             [:project-manager :context-menu :visible?] false))
+  
+  #_(when-not (nil? @timer-id)
+      (js/clearTimeout @timer-id))
+  
+  )
+
+(defn ts []
+  (.getTime (js/Date.)))
+
+(def dispatchLongPress (let [mouse-up-chan (a/chan (a/sliding-buffer 1))
+                             mouse-down-chan (a/chan (a/sliding-buffer 1))]
+                         (a/go-loop [previous-evt nil]
+                           (let [[[dom-evt k timestamp :as evt] ch] (a/alts! [mouse-up-chan mouse-down-chan])]
+                             (when (= :cancel-press k)
+                               (let [timestamp0 (last previous-evt)
+                                     diff (- timestamp timestamp0)
+                                     el (.-target dom-evt)]
+                                 (when (>= diff 1000)
+                                   (log/info "press")
+                                   (.. el (dispatchEvent (js/MouseEvent. "longpress" dom-evt))))))
+                             (recur evt)))
+                         
+                         (fn [el]
+                           (.. el (addEventListener "mousedown"
+                                                    #(a/put! mouse-down-chan [% :press (ts)])))
+                           (.. el (addEventListener "mouseup"
+                                                    #(a/put! mouse-up-chan [% :cancel-press (ts)]))))))
 
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -224,39 +286,25 @@
                                 :on-drag-end resize}])]
     (r/create-class {:component-did-mount (fn [this-component]
                                             (let [el (dom/dom-node this-component)
-                                                  timer-id (atom nil)
-                                                  show-context-menu (fn [evt]
-                                                                      (let [x (.-clientX evt)
-                                                                            y (.-clientY evt)]
-                                                                        (prn "x=" x )
-                                                                        (prn "y=" y)
-                                                                        (swap! app-state update-in
-                                                                               [:project-manager
-                                                                                :context-menu]
-                                                                               (fn [context-menu]
-                                                                                 (-> context-menu
-                                                                                     (assoc :visible? true)
-                                                                                     (assoc :x x)
-                                                                                     (assoc :y y)))))
-                                                                      (.. evt preventDefault)
-                                                                      (prn "show context menu"))]
-                                              (.. el (addEventListener
-                                                      "contextmenu"
-                                                      show-context-menu))
-                                              (.. el (addEventListener
-                                                      "mousedown"
-                                                      (fn [evt]
-                                                        (let [id (js/window.setTimeout #(show-context-menu evt)
-                                                                                       1000)]
-                                                          (reset! timer-id id)))))
+                                                  cm-handler #(let [x (.-clientX %)
+                                                                    y (.-clientY %)]
+                                                                (prn "handler")
+                                                                (js/console.log %)
+                                                                (.. % preventDefault)
+                                                                (show-context-menu x y))
+                                                  ]
+                                              (.. el (addEventListener "contextmenu" cm-handler))
+                                              (.. el (addEventListener "longpress" cm-handler))
+                                              (dispatchLongPress el)
+                                              
 
-                                              (.. el (addEventListener
-                                                      "mouseup"
-                                                      (fn [evt]
-                                                        (swap! app-state assoc-in [:project-manager :context-menu :visible?] false)
-                                                        (when-not (nil? @timer-id)
-                                                          (js/clearTimeout @timer-id))
-                                                        )))
+                                              #_(.. el (addEventListener
+                                                        "mousedown"
+                                                        start-long-press))
+
+                                              #_(.. el (addEventListener
+                                                        "mouseup"
+                                                        cancel-long-press))
                                               )
                                             )
                      :reagent-render (fn [state]
@@ -328,4 +376,8 @@
   (swap! app-state assoc :repl-text msg))
 
 
-
+(comment
+  (log/merge-config! {:timestamp-opts 
+                      {:pattern "yyyy/MM/dd HH:mm:ss ZZ" 
+                       }})
+  )
