@@ -47,14 +47,14 @@
            (-> context-menu
                (assoc :visible? true)
                (assoc :x x)
-               (assoc :y y))))
-  (prn "show-context-menu " x y))
+               (assoc :y y)))))
 
 (defn menu-item [{:keys [label on-click]}]
   [:a {:href "#"
        :on-click #(do
                     (hide-context-menu)
-                    (on-click %))} label])
+                    (when on-click
+                      (on-click %)))} label])
 
 (defn context-menu [context-menu-state]
   (prn "context-menu-state=" @context-menu-state)
@@ -288,25 +288,11 @@
                                             (let [el (dom/dom-node this-component)
                                                   cm-handler #(let [x (.-clientX %)
                                                                     y (.-clientY %)]
-                                                                (prn "handler")
-                                                                (js/console.log %)
                                                                 (.. % preventDefault)
-                                                                (show-context-menu x y))
-                                                  ]
+                                                                (show-context-menu x y))]
                                               (.. el (addEventListener "contextmenu" cm-handler))
                                               (.. el (addEventListener "longpress" cm-handler))
-                                              (dispatchLongPress el)
-                                              
-
-                                              #_(.. el (addEventListener
-                                                        "mousedown"
-                                                        start-long-press))
-
-                                              #_(.. el (addEventListener
-                                                        "mouseup"
-                                                        cancel-long-press))
-                                              )
-                                            )
+                                              (dispatchLongPress el)))
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
