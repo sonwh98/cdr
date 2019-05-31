@@ -56,17 +56,22 @@
                     (when on-click
                       (on-click %)))} label])
 
+(defn show-dialog []
+  (swap! app-state assoc-in [:dialog :visible?] true))
+
+(defn hide-dialog []
+  (swap! app-state assoc-in [:dialog :visible?] false))
+
 (defn context-menu [context-menu-state]
-  (prn "context-menu-state=" @context-menu-state)
   (when (:visible? @context-menu-state)
     [:div {:class "vertical-menu"
            :style {:position :absolute
                    :left (:x @context-menu-state)
                    :top (:y @context-menu-state)}}
-     #_[:a {:href "#", :class "active"} "Home"]
      [menu-item {:label "checkout"
-                 :on-click #(swap! app-state assoc-in [:dialog :visible?] true)}]
-     [menu-item {:label "branch"}]
+                 :on-click show-dialog}]
+     [menu-item {:label "branch"
+                 :on-click show-dialog}]
      [menu-item {:label "commit"}]
      [menu-item {:label "push"}]
      [menu-item {:label "reset"}]]))
@@ -77,7 +82,7 @@
            :style {:display :block}}  
      [:div {:class "modal-content"}
       [:span {:class "close"
-              :on-click #(swap! dialog-state assoc :visible? false)} "×"]
+              :on-click hide-dialog} "×"]
       [:p "Some text in the Modal.."]]]))
 
 (comment
@@ -270,7 +275,16 @@
                                  :width 5
                                  :height "100%"}
                          :on-drag resize
-                         :on-drag-end resize}])]
+                         :on-drag-end resize}])
+        open-file (fn [{:keys [name dir-path] :as file}]
+                    (let [cm (js/document.querySelector ".CodeMirror")
+                          cm (.. cm -CodeMirror)
+                          dir-path (str/join "/" dir-path)
+                          file-name (str "/" dir-path "/" name)]
+                      (a/go
+                        (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                              file-content (util/array-buffer->str file-content)]
+                          (.. cm getDoc (setValue file-content))))))]
     (r/create-class {:component-did-mount (fn [this-component]
                                             (let [el (dom/dom-node this-component)
                                                   cm-handler #(let [x (.-clientX %)
@@ -302,17 +316,7 @@
                                             [context-menu context-menu-state]
                                             [dialog dialog-state]
                                             [git-input state]
-                                            
-                                            [dir/tree {:node src-tree
-                                                       :on-click (fn [{:keys [name dir-path] :as file}]
-                                                                   (let [cm (js/document.querySelector ".CodeMirror")
-                                                                         cm (.. cm -CodeMirror)
-                                                                         dir-path (str/join "/" dir-path)
-                                                                         file-name (str "/" dir-path "/" name)]
-                                                                     (a/go
-                                                                       (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                                                                             file-content (util/array-buffer->str file-content)]
-                                                                         (.. cm getDoc (setValue file-content))))))}]
+                                            [dir/tree {:node src-tree :on-click open-file}]
                                             [gripper]])))})))
 
 (defn left-panel [state]
