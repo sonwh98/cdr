@@ -212,21 +212,6 @@
                                                     project-root)
                                              ))))} "GET"]]))))
 
-
-(defn start-long-press [on-long-press]
-  (a/go
-    (prn "press")
-    (swap! app-state assoc :long-press-start? true)
-    (a/<! (a/timeout 1000))
-    (if (-> @app-state :long-press-start?)
-      (on-long-press)
-      (prn "press cancelled")
-      )))
-
-(defn cancel-long-press [evt]
-  (prn "press cancel1")
-  (swap! app-state assoc :long-press-start? false))
-
 (defn ts []
   (.getTime (js/Date.)))
 
