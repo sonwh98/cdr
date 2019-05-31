@@ -173,15 +173,6 @@
                             "Eval"]
                            ]))})))
 
-(defn repl-area [state]
-  (let [repl-text (r/cursor state [:repl-text])]
-    [:div
-     [:textarea {:style {:width "100%"
-                         :height 200}
-                 :value @repl-text
-                 :read-only true}]
-     [:button "Clear REPL"]]))
-
 (defn stop-propagation [evt]
   (. evt stopPropagation)  )
 
