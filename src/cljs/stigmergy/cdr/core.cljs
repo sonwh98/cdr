@@ -215,24 +215,24 @@
 (defn ts []
   (.getTime (js/Date.)))
 
-(def create-long-press-event (let [mouse-up-chan (a/chan (a/sliding-buffer 1))
-                                   mouse-down-chan (a/chan (a/sliding-buffer 1))]
-                               (a/go-loop [previous-evt nil]
-                                 (let [[[dom-evt k timestamp :as evt] ch] (a/alts! [mouse-up-chan mouse-down-chan])]
-                                   (when (= :cancel-press k)
-                                     (let [timestamp0 (last previous-evt)
-                                           diff (- timestamp timestamp0)
-                                           el (.-target dom-evt)]
-                                       (when (>= diff 1000)
-                                         (log/info "press")
-                                         (.. el (dispatchEvent (js/MouseEvent. "longpress" dom-evt))))))
-                                   (recur evt)))
-                               
-                               (fn [el]
-                                 (.. el (addEventListener "mousedown"
-                                                          #(a/put! mouse-down-chan [% :press (ts)])))
-                                 (.. el (addEventListener "mouseup"
-                                                          #(a/put! mouse-up-chan [% :cancel-press (ts)]))))))
+(def with-long-press (let [timer-id (atom nil)]
+                       (fn [el]
+                         (.. el (addEventListener "mousedown"
+                                                  (fn [evt]
+                                                    (prn "mouse-down")
+                                                    (reset! timer-id
+                                                            (js/setTimeout
+                                                             #(.. el (dispatchEvent
+                                                                      (js/MouseEvent. "longpress" evt)))
+                                                             1000)))))
+                         (.. el (addEventListener "mouseup"
+                                                  (fn [evt]
+                                                    (prn "mouse-up")
+                                                    (js/clearTimeout @timer-id)
+                                                    (when (-> @app-state :project-manager :context-menu :visible?)
+                                                      (stop-prevent evt))
+                                                    )))
+                         el)))
 
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -262,14 +262,16 @@
                               file-content (util/array-buffer->str file-content)]
                           (.. cm getDoc (setValue file-content))))))]
     (r/create-class {:component-did-mount (fn [this-component]
-                                            (let [el (dom/dom-node this-component)
+                                            (let [el (-> this-component
+                                                         dom/dom-node 
+                                                         with-long-press)
                                                   cm-handler #(let [x (.-clientX %)
                                                                     y (.-clientY %)]
                                                                 (.. % preventDefault)
                                                                 (show-context-menu x y))]
                                               (.. el (addEventListener "contextmenu" cm-handler))
                                               (.. el (addEventListener "longpress" cm-handler))
-                                              (create-long-press-event el)))
+                                              ))
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
@@ -288,7 +290,8 @@
                                                           :width width
                                                           :overflow-x :hidden
                                                           :overflow-y :hidden}
-                                                  :on-click #(hide-context-menu)}
+                                                  ;;:on-click #(hide-context-menu)
+                                                  }
                                             [context-menu context-menu-state]
                                             [dialog dialog-state]
                                             [git-input state]
