@@ -6,7 +6,7 @@
             [reagent.core :as r]
             [reagent.dom :as dom]
             [stigmergy.tily.js :as util]
-            
+            [stigmergy.eve :as eve]
             [stigmergy.cdr.mdc :as mdc]
             [stigmergy.cdr.fs :as fs]
             [stigmergy.cdr.git :as git]
@@ -173,12 +173,7 @@
                             "Eval"]
                            ]))})))
 
-(defn stop-propagation [evt]
-  (. evt stopPropagation)  )
 
-(defn stop-prevent [evt]
-  (. evt preventDefault)
-  (. evt stopPropagation))
 
 (defn git-input [state]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
@@ -215,24 +210,7 @@
 (defn ts []
   (.getTime (js/Date.)))
 
-(def with-long-press (let [timer-id (atom nil)]
-                       (fn [el]
-                         (.. el (addEventListener "mousedown"
-                                                  (fn [evt]
-                                                    (prn "mouse-down")
-                                                    (reset! timer-id
-                                                            (js/setTimeout
-                                                             #(.. el (dispatchEvent
-                                                                      (js/MouseEvent. "longpress" evt)))
-                                                             1000)))))
-                         (.. el (addEventListener "mouseup"
-                                                  (fn [evt]
-                                                    (prn "mouse-up")
-                                                    (js/clearTimeout @timer-id)
-                                                    (when (-> @app-state :project-manager :context-menu :visible?)
-                                                      (stop-prevent evt))
-                                                    )))
-                         el)))
+
 
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -264,14 +242,13 @@
     (r/create-class {:component-did-mount (fn [this-component]
                                             (let [el (-> this-component
                                                          dom/dom-node 
-                                                         with-long-press)
+                                                         eve/with-long-press)
                                                   cm-handler #(let [x (.-clientX %)
                                                                     y (.-clientY %)]
-                                                                (.. % preventDefault)
+                                                                (eve/preventDefault %)
                                                                 (show-context-menu x y))]
                                               (.. el (addEventListener "contextmenu" cm-handler))
-                                              (.. el (addEventListener "longpress" cm-handler))
-                                              ))
+                                              (.. el (addEventListener "longpress" cm-handler))))
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
@@ -290,8 +267,7 @@
                                                           :width width
                                                           :overflow-x :hidden
                                                           :overflow-y :hidden}
-                                                  ;;:on-click #(hide-context-menu)
-                                                  }
+                                                  :on-double-click #(hide-context-menu)}
                                             [context-menu context-menu-state]
                                             [dialog dialog-state]
                                             [git-input state]
