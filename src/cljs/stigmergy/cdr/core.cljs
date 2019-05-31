@@ -203,10 +203,6 @@
                                                                (str/replace ".git" ""))
                                              dir (str "/" repo-name)
                                              files (atom [])]
-
-                                         ;;(reset! project-name repo-name)
-                                         ;;(clojure.set/rename-keys @project )
-                                         
                                          (a/go
                                            (a/<! (git/clone {:url git-url
                                                              :dir dir}))
@@ -233,16 +229,7 @@
 
 (defn cancel-long-press [evt]
   (prn "press cancel1")
-  (swap! app-state assoc :long-press-start? false)
-  #_(a/go
-      (a/<! (a/timeout 1000))
-      (swap! app-state assoc-in
-             [:project-manager :context-menu :visible?] false))
-  
-  #_(when-not (nil? @timer-id)
-      (js/clearTimeout @timer-id))
-  
-  )
+  (swap! app-state assoc :long-press-start? false))
 
 (defn ts []
   (.getTime (js/Date.)))
