@@ -261,16 +261,16 @@
                    (if (< x min-width)
                      (swap! state assoc-in [:project-manager :width] min-width)
                      (swap! state assoc-in [:project-manager :width] x))))
-        resize-gripper (fn []
-                         [:div {:draggable true
-                                :style {:position :absolute
-                                        :cursor :ew-resize
-                                        :top 0
-                                        :right 0
-                                        :width 5
-                                        :height "100%"}
-                                :on-drag resize
-                                :on-drag-end resize}])]
+        gripper (fn []
+                  [:div {:draggable true
+                         :style {:position :absolute
+                                 :cursor :ew-resize
+                                 :top 0
+                                 :right 0
+                                 :width 5
+                                 :height "100%"}
+                         :on-drag resize
+                         :on-drag-end resize}])]
     (r/create-class {:component-did-mount (fn [this-component]
                                             (let [el (dom/dom-node this-component)
                                                   cm-handler #(let [x (.-clientX %)
@@ -297,8 +297,8 @@
                                                           :height "100%"
                                                           :width width
                                                           :overflow-x :hidden
-                                                          :overflow-y :hidden}}
-                                            ;;[(-> @state :project-manager :context-menu :menu)]
+                                                          :overflow-y :hidden}
+                                                  :on-click #(hide-context-menu)}
                                             [context-menu context-menu-state]
                                             [dialog dialog-state]
                                             [git-input state]
@@ -313,7 +313,7 @@
                                                                        (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                                                                              file-content (util/array-buffer->str file-content)]
                                                                          (.. cm getDoc (setValue file-content))))))}]
-                                            [resize-gripper]])))})))
+                                            [gripper]])))})))
 
 (defn left-panel [state]
   (let [{:keys [width height]} (util/get-dimensions)
