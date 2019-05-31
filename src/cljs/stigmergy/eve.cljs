@@ -1,5 +1,4 @@
-(ns stigmergy.eve
-  (:require [reagent.core :as r]))
+(ns stigmergy.eve)
 
 (def with-long-press (let [timer-id (atom nil)]
                        (fn [element {:keys [on-mouse-up on-mouse-down time-out]
