@@ -240,15 +240,15 @@
                               file-content (util/array-buffer->str file-content)]
                           (.. cm getDoc (setValue file-content))))))]
     (r/create-class {:component-did-mount (fn [this-component]
-                                            (let [el (-> this-component
-                                                         dom/dom-node 
-                                                         eve/with-long-press)
-                                                  cm-handler #(let [x (.-clientX %)
-                                                                    y (.-clientY %)]
-                                                                (eve/preventDefault %)
-                                                                (show-context-menu x y))]
-                                              (.. el (addEventListener "contextmenu" cm-handler))
-                                              (.. el (addEventListener "longpress" cm-handler))))
+                                            (when-let [el (some-> this-component
+                                                                  dom/dom-node 
+                                                                  eve/with-long-press)]
+                                              (let [cm-handler #(let [x (.-clientX %)
+                                                                      y (.-clientY %)]
+                                                                  (eve/preventDefault %)
+                                                                  (show-context-menu x y))]
+                                                (.. el (addEventListener "contextmenu" cm-handler))
+                                                (.. el (addEventListener "longpress" cm-handler)))))
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
