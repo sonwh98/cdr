@@ -85,13 +85,6 @@
               :on-click hide-dialog} "×"]
       [:p "Some text in the Modal.."]]]))
 
-(comment
-  (swap! app-state assoc-in [:project-manager :context-menu :visible?] true)
-  (swap! app-state update-in [:project-manager :context-menu :visible?] not)
-  (swap! app-state update-in [:dialog :visible?] not)
-  (-> @app-state :project-manager :context-menu)
-  )
-
 (def current-ns (r/cursor app-state [:current-ns]))
 (def cljs-state (cljs.js/empty-state))
 
@@ -170,10 +163,7 @@
                                                                r (a/<! (async-eval s-expression))]
                                                            (prn s-expression)
                                                            (prn "r=" r)))}
-                            "Eval"]
-                           ]))})))
-
-
+                            "Eval"]]))})))
 
 (defn git-input [state]
   (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
