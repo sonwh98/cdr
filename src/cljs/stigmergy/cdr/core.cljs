@@ -63,18 +63,18 @@
   (swap! app-state assoc-in [:dialog :visible?] false))
 
 (defn context-menu [context-menu-state]
-  (when (:visible? @context-menu-state)
-    [:div {:class "vertical-menu"
-           :style {:position :absolute
-                   :left (:x @context-menu-state)
-                   :top (:y @context-menu-state)}}
-     [menu-item {:label "checkout"
-                 :on-click show-dialog}]
-     [menu-item {:label "branch"
-                 :on-click show-dialog}]
-     [menu-item {:label "commit"}]
-     [menu-item {:label "push"}]
-     [menu-item {:label "reset"}]]))
+  [:div {:class "vertical-menu"
+         :style {:position :absolute
+                 :left (:x @context-menu-state)
+                 :top (:y @context-menu-state)}}
+   [menu-item {:label "checkout"
+               :on-click show-dialog}]
+   [menu-item {:label "branch"
+               :on-click show-dialog}]
+   [menu-item {:label "commit"}]
+   [menu-item {:label "push"}]
+   [menu-item {:label "reset"}]]
+  )
 
 (defn dialog [dialog-state]
   (when (:visible? @dialog-state)
@@ -204,13 +204,7 @@
                                            (let [project-root (fs/mk-project-tree @files)]
                                              (swap! state assoc-in
                                                     [:projects current-project :src-tree]
-                                                    project-root)
-                                             ))))} "GET"]]))))
-
-(defn ts []
-  (.getTime (js/Date.)))
-
-
+                                                    project-root)))))} "GET"]]))))
 
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -239,34 +233,23 @@
                         (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                               file-content (util/array-buffer->str file-content)]
                           (.. cm getDoc (setValue file-content))))))
-        attach-long-press (let [listener-added? (atom false)
-                                cm-handler #(let [x (.-clientX %)
-                                                  y (.-clientY %)]
-                                              ;;(eve/preventDefault %)
-                                              (prn "cm-handler")
-                                              (show-context-menu x y))]
+        attach-long-press (let [contextmenu-handler #(let [x (- (.-clientX %) 15)
+                                                           y (.-clientY %)]
+                                                       (eve/preventDefault %)
+                                                       (show-context-menu x y))]
                             (fn [this-component]
                               (when-let [el (some-> this-component
                                                     dom/dom-node 
                                                     eve/with-long-press)]
-                                (when-not @listener-added?
-                                  (js/console.log "el=" (hash el) el)
-                                  (.. el (addEventListener "contextmenu" cm-handler))
-                                  (.. el (addEventListener "longpress" cm-handler))
-                                  (reset! listener-added? true)))))]
-    (r/create-class {;;:component-did-mount attach-long-press
-                     :component-did-update attach-long-press
-                     :component-did-mount (fn [this-component]
-                                            (prn "did mount"))
-                     :component-will-unmount (fn [this-component]
-                                               (prn "will unmount"))
+                                (.. el (addEventListener "contextmenu" contextmenu-handler))
+                                (.. el (addEventListener "longpress" contextmenu-handler)))))]
+    (r/create-class {:component-did-mount attach-long-press
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
                                              context-menu-state (r/cursor state [:project-manager :context-menu])
                                              dialog-state (r/cursor state [:dialog])
                                              src-tree (r/cursor project [:src-tree])
-                                             ;;visible? (-> @state :project-manager :visible?)
                                              width (-> @state :project-manager :width)]
                                          [:div {:style {:position :absolute
                                                         :left 20
@@ -278,7 +261,8 @@
                                                         :overflow-x :hidden
                                                         :overflow-y :hidden}
                                                 :on-double-click #(hide-context-menu)}
-                                          [context-menu context-menu-state]
+                                          (when (:visible? @context-menu-state)
+                                            [context-menu context-menu-state])
                                           [dialog dialog-state]
                                           [git-input state]
                                           [dir/tree {:node src-tree :on-click open-file}]
