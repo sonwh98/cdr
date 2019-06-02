@@ -238,41 +238,51 @@
                       (a/go
                         (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                               file-content (util/array-buffer->str file-content)]
-                          (.. cm getDoc (setValue file-content))))))]
-    (r/create-class {:component-did-mount (fn [this-component]
-                                            (when-let [el (some-> this-component
-                                                                  dom/dom-node 
-                                                                  eve/with-long-press)]
-                                              (let [cm-handler #(let [x (.-clientX %)
-                                                                      y (.-clientY %)]
-                                                                  (eve/preventDefault %)
-                                                                  (show-context-menu x y))]
-                                                (.. el (addEventListener "contextmenu" cm-handler))
-                                                (.. el (addEventListener "longpress" cm-handler)))))
+                          (.. cm getDoc (setValue file-content))))))
+        attach-long-press (let [listener-added? (atom false)
+                                cm-handler #(let [x (.-clientX %)
+                                                  y (.-clientY %)]
+                                              ;;(eve/preventDefault %)
+                                              (prn "cm-handler")
+                                              (show-context-menu x y))]
+                            (fn [this-component]
+                              (when-let [el (some-> this-component
+                                                    dom/dom-node 
+                                                    eve/with-long-press)]
+                                (when-not @listener-added?
+                                  (js/console.log "el=" (hash el) el)
+                                  (.. el (addEventListener "contextmenu" cm-handler))
+                                  (.. el (addEventListener "longpress" cm-handler))
+                                  (reset! listener-added? true)))))]
+    (r/create-class {;;:component-did-mount attach-long-press
+                     :component-did-update attach-long-press
+                     :component-did-mount (fn [this-component]
+                                            (prn "did mount"))
+                     :component-will-unmount (fn [this-component]
+                                               (prn "will unmount"))
                      :reagent-render (fn [state]
                                        (let [current-project (:current-project @state)
                                              project (r/cursor state [:projects current-project])
                                              context-menu-state (r/cursor state [:project-manager :context-menu])
                                              dialog-state (r/cursor state [:dialog])
                                              src-tree (r/cursor project [:src-tree])
-                                             visible? (-> @state :project-manager :visible?)
+                                             ;;visible? (-> @state :project-manager :visible?)
                                              width (-> @state :project-manager :width)]
-                                         (if visible?
-                                           [:div {:style {:position :absolute
-                                                          :left 20
-                                                          :top 0
-                                                          :z-index 20
-                                                          :background-color :white
-                                                          :height "100%"
-                                                          :width width
-                                                          :overflow-x :hidden
-                                                          :overflow-y :hidden}
-                                                  :on-double-click #(hide-context-menu)}
-                                            [context-menu context-menu-state]
-                                            [dialog dialog-state]
-                                            [git-input state]
-                                            [dir/tree {:node src-tree :on-click open-file}]
-                                            [gripper]])))})))
+                                         [:div {:style {:position :absolute
+                                                        :left 20
+                                                        :top 0
+                                                        :z-index 20
+                                                        :background-color :white
+                                                        :height "100%"
+                                                        :width width
+                                                        :overflow-x :hidden
+                                                        :overflow-y :hidden}
+                                                :on-double-click #(hide-context-menu)}
+                                          [context-menu context-menu-state]
+                                          [dialog dialog-state]
+                                          [git-input state]
+                                          [dir/tree {:node src-tree :on-click open-file}]
+                                          [gripper]]))})))
 
 (defn left-panel [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -291,7 +301,8 @@
 (defn cdr-ui [state]
   [:div
    [left-panel state]
-   [project-manager state]
+   (when (-> @state :project-manager :visible?)
+     [project-manager state])
    [code-area state]])
 
 (defn init []
