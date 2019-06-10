@@ -13,7 +13,6 @@
 
             [stigmergy.cdr.state :as state]
             [stigmergy.cdr.core :as core]
-            [stigmergy.cdr.state :as state]
             [stigmergy.cdr.mdc :as mdc]
             [stigmergy.cdr.fs :as fs]
             [stigmergy.cdr.git :as git]
