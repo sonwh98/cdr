@@ -212,7 +212,7 @@
       [:button  "Structure"]
       [:button {:on-click toggle-project-manager-visibility} "Project"]]]))
 
-(defn cdr-ui [state]
+(defn main-ui [state]
   [:div
    [left-panel state]
    (when (-> @state :project-manager :visible?)
@@ -226,7 +226,7 @@
   (set! (.-pfs js/window)  js/window.fs.promises)
   
   ;;(ws/connect-to-websocket-server {:port 80})
-  (r/render-component [cdr-ui state/app-state] (js/document.getElementById "app"))
+  (r/render-component [main-ui state/app-state] (js/document.getElementById "app"))
   (log/set-level! :info))
 
 (defmethod process-msg :chat-broadcast [[_ msg]]
