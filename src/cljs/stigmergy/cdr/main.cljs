@@ -39,26 +39,53 @@
                       (on-click %)))} label])
 
 (defn show-dialog [content]
-  #_(swap! state/app-state assoc-in [:dialog :visible?] true)
   (swap! state/app-state update-in [:dialog] (fn [dialog-state]
-                                               (-> dialog-state
-                                                   (assoc :visible? true)
-                                                   (assoc :content content))
-                                               ))
+                                               (let [content (if (fn? content)
+                                                               [content]
+                                                               content)]
+                                                 (-> dialog-state
+                                                     (assoc :visible? true)
+                                                     (assoc :content content)))))
   )
 
 (defn hide-dialog []
   (swap! state/app-state assoc-in [:dialog :visible?] false))
 
 (defn context-menu [context-menu-state]
-  (let [checkout-ui [:div
-                     [:span "git url:"] [:input {:type :text}]
-                     [:br]
-                     [:span "User Name:"] [:input {:type :text}]
-                     [:br]
-                     [:span "Password"] [:input {:type :password}]
-                     [:br]
-                     [:button "checkout"]]]
+  (let [checkout-ui (fn []
+                      (let [value (r/atom "https://github.com/sonwh98/cdr.git")
+                            current-project (:current-project @state/app-state)]
+                        (fn []
+                          [:div
+                           [:input {:type :text
+                                    :placeholder "git URL"
+                                    :style {:width "100%"}
+                                    :value @value
+                                    :on-change (fn [evt]
+                                                 (reset! value (-> evt .-target .-value)))}]
+
+                           [:div.mdc-button
+                            {:on-click (fn [evt]
+                                         (let [git-url @value
+                                               repo-name (some-> git-url
+                                                                 (str/split "/")
+                                                                 last
+                                                                 (str/replace ".git" ""))
+                                               dir (str "/" repo-name)
+                                               files (atom [])]
+                                           (a/go
+                                             (a/<! (git/clone {:url git-url
+                                                               :dir dir}))
+                                             (a/<! (fs/walk-dir {:dir dir
+                                                                 :on-file (fn [file]
+                                                                            (when-not (re-find #".git" file)
+                                                                              (swap! files conj file)))}))
+                                             (let [project-root (fs/mk-project-tree @files)]
+                                               (swap! state/app-state assoc-in
+                                                      [:projects current-project :src-tree]
+                                                      project-root)
+                                               (hide-dialog)))))}
+                            "GET"]])))]
     [:div {:class "vertical-menu"
            :style {:position :absolute
                    :left (:x @context-menu-state)
@@ -120,37 +147,6 @@
                                                            (prn "r=" r)))}
                             "Eval"]]))})))
 
-(defn git-input [state]
-  (let [value (r/atom "https://github.com/sonwh98/cdr.git")]
-    (fn [state]
-      (let [current-project (:current-project @state)]
-        [:div
-         [:input {:type :text
-                  :placeholder "git URL"
-                  :style {:width "100%"}
-                  :value @value
-                  :on-change (fn [evt]
-                               (reset! value (-> evt .-target .-value)))}]
-         [:div.mdc-button {:on-click (fn [evt]
-                                       (let [git-url @value
-                                             repo-name (some-> git-url
-                                                               (str/split "/")
-                                                               last
-                                                               (str/replace ".git" ""))
-                                             dir (str "/" repo-name)
-                                             files (atom [])]
-                                         (a/go
-                                           (a/<! (git/clone {:url git-url
-                                                             :dir dir}))
-                                           (a/<! (fs/walk-dir {:dir dir
-                                                               :on-file (fn [file]
-                                                                          (when-not (re-find #".git" file)
-                                                                            (swap! files conj file)))}))
-                                           (let [project-root (fs/mk-project-tree @files)]
-                                             (swap! state assoc-in
-                                                    [:projects current-project :src-tree]
-                                                    project-root)))))} "GET"]]))))
-
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
         min-width (/ width 4)
@@ -195,7 +191,8 @@
                                              context-menu-state (r/cursor state [:project-manager :context-menu])
                                              dialog-state (r/cursor state [:dialog])
                                              src-tree (r/cursor project [:src-tree])
-                                             width (-> @state :project-manager :width)]
+                                             width (or (-> @state :project-manager :width)
+                                                       min-width)]
                                          [:div {:style {:position :absolute
                                                         :left 20
                                                         :top 0
@@ -209,7 +206,6 @@
                                           (when (:visible? @context-menu-state)
                                             [context-menu context-menu-state])
                                           [dialog dialog-state]
-                                          [git-input state]
                                           [dir/tree {:node src-tree :on-click open-file}]
                                           [gripper]]))})))
 
