@@ -42,6 +42,7 @@ user> (cljs) ;;starts clojurescript REPL. NOTE: must open the app in the browser
 
 # Live Demo
 
-Try the live demo. Be patient. It takes a while to load
+Try the live demo. Be patient. It takes a while to load. Long press or right click to get menu to checkout a project.
+Enter any http URL of a project on bitbucket or github to checkout the project.
 
 http://cdr.stigmergy.systems
