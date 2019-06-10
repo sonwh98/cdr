@@ -24,7 +24,7 @@
   :cljsbuild {:builds
               [{:id "dev"
                 :source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-                :figwheel {:on-jsload "stigmergy.cdr.core/jsload"
+                :figwheel {:on-jsload "stigmergy.cdr.main/jsload"
                            :websocket-host :js-client-host}
                 :compiler {:main stigmergy.cdr.init
                            :asset-path "js/compiled/dev"
@@ -32,16 +32,16 @@
                            :output-dir "resources/public/js/compiled/dev"
                            :source-map-timestamp true
                            :preloads [devtools.preload]}}
-               {:id "prod"
-                :source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
-                ;; :figwheel {:on-jsload "stigmergy.cdr.core/jsload"
-                ;;            :websocket-host :js-client-host}
-                :compiler {:main stigmergy.cdr.init
-                           :asset-path "js/compiled/prod"
-                           :output-to "resources/public/js/compiled/cdr.js"
-                           :output-dir "resources/public/js/compiled/prod"
-                           :source-map-timestamp true
-                           :preloads [devtools.preload]}}
+               #_{:id "prod"
+                  :source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
+                  ;; :figwheel {:on-jsload "stigmergy.cdr.core/jsload"
+                  ;;            :websocket-host :js-client-host}
+                  :compiler {:main stigmergy.cdr.main.init
+                             :asset-path "js/compiled/prod"
+                             :output-to "resources/public/js/compiled/cdr.js"
+                             :output-dir "resources/public/js/compiled/prod"
+                             :source-map-timestamp true
+                             :preloads [devtools.preload]}}
                ]}
   
   :profiles {:project/dev {:dependencies [[figwheel-sidecar "0.5.18"]
