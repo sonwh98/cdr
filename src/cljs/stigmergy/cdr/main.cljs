@@ -38,24 +38,38 @@
                     (when on-click
                       (on-click %)))} label])
 
-(defn show-dialog []
-  (swap! state/app-state assoc-in [:dialog :visible?] true))
+(defn show-dialog [content]
+  #_(swap! state/app-state assoc-in [:dialog :visible?] true)
+  (swap! state/app-state update-in [:dialog] (fn [dialog-state]
+                                               (-> dialog-state
+                                                   (assoc :visible? true)
+                                                   (assoc :content content))
+                                               ))
+  )
 
 (defn hide-dialog []
   (swap! state/app-state assoc-in [:dialog :visible?] false))
 
 (defn context-menu [context-menu-state]
-  [:div {:class "vertical-menu"
-         :style {:position :absolute
-                 :left (:x @context-menu-state)
-                 :top (:y @context-menu-state)}}
-   [menu-item {:label "checkout"
-               :on-click show-dialog}]
-   [menu-item {:label "branch"
-               :on-click show-dialog}]
-   [menu-item {:label "commit"}]
-   [menu-item {:label "push"}]
-   [menu-item {:label "reset"}]]
+  (let [checkout-ui [:div
+                     [:span "git url:"] [:input {:type :text}]
+                     [:br]
+                     [:span "User Name:"] [:input {:type :text}]
+                     [:br]
+                     [:span "Password"] [:input {:type :password}]
+                     [:br]
+                     [:button "checkout"]]]
+    [:div {:class "vertical-menu"
+           :style {:position :absolute
+                   :left (:x @context-menu-state)
+                   :top (:y @context-menu-state)}}
+     [menu-item {:label "checkout"
+                 :on-click #(show-dialog checkout-ui)}]
+     [menu-item {:label "branch"
+                 :on-click #(show-dialog [:h1 "branch"])}]
+     [menu-item {:label "commit"}]
+     [menu-item {:label "push"}]
+     [menu-item {:label "reset"}]])
   )
 
 (defn dialog [dialog-state]
@@ -65,7 +79,8 @@
      [:div {:class "modal-content"}
       [:span {:class "close"
               :on-click hide-dialog} "×"]
-      [:p "Some text in the Modal.."]]]))
+      (some-> dialog-state deref :content)
+      #_[:p "Some text in the Modal.."]]]))
 
 (defn toggle-project-manager-visibility []
   (swap! state/app-state update-in [:project-manager :visible?] not))
