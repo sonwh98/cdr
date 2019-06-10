@@ -54,9 +54,10 @@
 (defn context-menu [context-menu-state]
   (let [checkout-ui (fn []
                       (let [value (r/atom "https://github.com/sonwh98/cdr.git")
-                            current-project (:current-project @state/app-state)]
+                            current-project (:current-project @state/app-state)
+                            cursor (r/atom :auto)]
                         (fn []
-                          [:div
+                          [:div {:style {:cursor @cursor}}
                            [:input {:type :text
                                     :placeholder "git URL"
                                     :style {:width "100%"}
@@ -74,6 +75,7 @@
                                                dir (str "/" repo-name)
                                                files (atom [])]
                                            (a/go
+                                             (reset! cursor :wait)
                                              (a/<! (git/clone {:url git-url
                                                                :dir dir}))
                                              (a/<! (fs/walk-dir {:dir dir
