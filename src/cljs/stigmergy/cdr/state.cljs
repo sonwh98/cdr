@@ -4,7 +4,7 @@
 (def app-state (r/atom {:code-text ""
                         :repl-text ""
                         :current-ns 'cljs.user
-                        :current-project "cdr"
+                        :current-project nil
                         :long-press-start? false
                         :projects {"cdr" {:git {:url ""
                                                 :username ""

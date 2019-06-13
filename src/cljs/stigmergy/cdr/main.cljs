@@ -54,7 +54,6 @@
 (defn context-menu [context-menu-state]
   (let [checkout-ui (fn []
                       (let [value (r/atom "https://github.com/sonwh98/cdr.git")
-                            current-project (:current-project @state/app-state)
                             cursor (r/atom :auto)]
                         (fn []
                           [:div {:style {:cursor @cursor}}
@@ -76,6 +75,7 @@
                                                files (atom [])]
                                            (a/go
                                              (reset! cursor :wait)
+                                             (swap! state/app-state assoc :current-project repo-name)
                                              (a/<! (git/clone {:url git-url
                                                                :dir dir}))
                                              (a/<! (fs/walk-dir {:dir dir
@@ -84,7 +84,7 @@
                                                                               (swap! files conj file)))}))
                                              (let [project-root (fs/mk-project-tree @files)]
                                                (swap! state/app-state assoc-in
-                                                      [:projects current-project :src-tree]
+                                                      [:projects repo-name :src-tree]
                                                       project-root)
                                                (hide-dialog)))))}
                             "GET"]])))]
@@ -188,11 +188,11 @@
                                 (.. el (addEventListener "longpress" contextmenu-handler)))))]
     (r/create-class {:component-did-mount attach-long-press
                      :reagent-render (fn [state]
-                                       (let [current-project (:current-project @state)
-                                             project (r/cursor state [:projects current-project])
+                                       (let [;;current-project (:current-project @state)
+                                             ;;project (r/cursor state [:projects current-project])
                                              context-menu-state (r/cursor state [:project-manager :context-menu])
                                              dialog-state (r/cursor state [:dialog])
-                                             src-tree (r/cursor project [:src-tree])
+                                             ;;src-tree (r/cursor project [:src-tree])
                                              width (or (-> @state :project-manager :width)
                                                        min-width)]
                                          [:div {:style {:position :absolute
@@ -203,12 +203,15 @@
                                                         :height "100%"
                                                         :width width
                                                         :overflow-x :hidden
-                                                        :overflow-y :hidden}
+                                                        :overflow-y :auto}
                                                 :on-double-click #(hide-context-menu)}
                                           (when (:visible? @context-menu-state)
                                             [context-menu context-menu-state])
                                           [dialog dialog-state]
-                                          [dir/tree {:node src-tree :on-click open-file}]
+                                          (for [[project-name {:keys [src-tree]}] (:projects @state)
+                                                :when (-> src-tree nil? not)
+                                                :let [st (r/cursor state [:projects project-name :src-tree])]]
+                                            ^{:key project-name} [dir/tree {:node st :on-click open-file}])
                                           [gripper]]))})))
 
 (defn left-panel [state]
