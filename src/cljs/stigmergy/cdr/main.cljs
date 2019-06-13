@@ -132,14 +132,14 @@
                                                                              :keyMap "emacs"
                                                                              })]
                                (.. cm (setSize nil height))
+                               (.. cm (on "focus" close-project-manager))
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
                         (let [{:keys [width height]} (util/get-dimensions)]
                           [:div {:style {:position :absolute
                                          :left 20
-                                         :width "100%"}
-                                 :on-click close-project-manager}
+                                         :width "100%"}}
                            [:textarea#editor]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
                                                                s-expression (cljs.reader/read-string
