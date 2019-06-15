@@ -178,7 +178,7 @@
                           (.. cm getDoc (setValue file-content))))))
         attach-long-press (let [contextmenu-handler #(let [x (- (.-clientX %) 15)
                                                            y (.-clientY %)]
-                                                       (eve/preventDefault %)
+                                                       (.. % preventDefault)
                                                        (show-context-menu x y))]
                             (fn [this-component]
                               (when-let [el (some-> this-component
@@ -188,11 +188,8 @@
                                 (.. el (addEventListener "longpress" contextmenu-handler)))))]
     (r/create-class {:component-did-mount attach-long-press
                      :reagent-render (fn [state]
-                                       (let [;;current-project (:current-project @state)
-                                             ;;project (r/cursor state [:projects current-project])
-                                             context-menu-state (r/cursor state [:project-manager :context-menu])
+                                       (let [context-menu-state (r/cursor state [:project-manager :context-menu])
                                              dialog-state (r/cursor state [:dialog])
-                                             ;;src-tree (r/cursor project [:src-tree])
                                              width (or (-> @state :project-manager :width)
                                                        min-width)]
                                          [:div {:style {:position :absolute

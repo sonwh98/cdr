@@ -27,11 +27,12 @@
                    :let [k (-> @node keys first)
                          child (r/cursor node [k index])]]
                (with-meta (if-let [file-name (:name c)]
-                            [:li {:on-click #(on-click c)} file-name]
+                            [:li {:on-click #(on-click c)
+                                  :on-context-menu #(js/alert "right")} file-name]
                             [dir child on-click])
                  {:key (str c)}))))]])
 
-(defn tree [{:keys [node on-click] }]
+(defn tree [{:keys [node on-click] :as args}]
   (when-not (empty? @node)
     [:ul {:style {:list-style-type :none
                   :overflow :auto

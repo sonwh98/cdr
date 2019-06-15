@@ -19,9 +19,3 @@
                                                            (on-mouse-up evt)))))
                          element)))
 
-(defn stop-propagation [evt]
-  (. evt stopPropagation)  )
-
-(defn preventDefault [evt]
-  (. evt preventDefault)
-  (. evt stopPropagation))
