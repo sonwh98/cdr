@@ -28,7 +28,9 @@
                          child (r/cursor node [k index])]]
                (with-meta (if-let [file-name (:name c)]
                             [:li {:on-click #(on-click c)
-                                  :on-context-menu #(js/alert "right")} file-name]
+                                  :on-context-menu #(do
+                                                      (.. % preventDefault)
+                                                      (js/alert "right"))} file-name]
                             [dir child on-click])
                  {:key (str c)}))))]])
 
