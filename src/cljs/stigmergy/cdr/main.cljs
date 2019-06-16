@@ -51,76 +51,80 @@
 (defn hide-dialog []
   (swap! state/app-state assoc-in [:dialog :visible?] false))
 
+(defn clone-ui []
+  (let [value (r/atom "")
+        cursor (r/atom :auto)
+        username (r/atom "")
+        password (r/atom "")
+        on-change (fn [evt a-atom]
+                    (let [v (-> evt .-target .-value)]
+                      (prn "v=" v)
+                      (reset! a-atom v)))]
+    (fn []
+      [:div {:style {:cursor @cursor}}
+       [:input {:type :text
+                :placeholder "github project URL"
+                :style {:width "100%"}
+                :value @value
+                :on-change #(on-change % value)}]
+       [:input {:type :text
+                :style {:width "100%"}
+                :placeholder "optional github user-name"
+                :value @username
+                :on-change #(on-change % username)
+                }]
+       [:br]
+       [:input {:type :text
+                :placeholder "optional github password"
+                :value @password
+                :on-change #(on-change % password)
+                :style {:width "100%"}}]
+       [:br]
+       
+       [:div.mdc-button
+        {:on-click (fn [evt]
+                     (let [git-url @value
+                           repo-name (some-> git-url
+                                             (str/split "/")
+                                             last
+                                             (str/replace ".git" ""))
+                           dir (str "/" repo-name)
+                           files (atom [])]
+                       (a/go
+                         (reset! cursor :wait)
+                         (swap! state/app-state assoc :current-project repo-name)
+                         (swap! state/app-state assoc-in
+                                [:projects repo-name :git :username]
+                                @username)
+                         (swap! state/app-state assoc-in
+                                [:projects repo-name :git :password]
+                                @password)
+                         (a/<! (git/clone {:url git-url
+                                           :dir dir}))
+                         (a/<! (fs/walk-dir {:dir dir
+                                             :on-file (fn [file]
+                                                        (when-not (re-find #".git" file)
+                                                          (swap! files conj file)))}))
+
+                         
+
+                         (let [project-root (fs/mk-project-tree @files)]
+                           (swap! state/app-state assoc-in
+                                  [:projects repo-name :src-tree]
+                                  project-root)
+                           (hide-dialog)))))}
+        "clone"]])))
+
 (defn context-menu [context-menu-state]
-  (let [checkout-ui (fn []
-                      (let [value (r/atom "")
-                            cursor (r/atom :auto)
-                            username (r/atom "")
-                            password (r/atom "")
-                            on-change (fn [evt a-atom]
-                                        (let [v (-> evt .-target .-value)]
-                                          (prn "v=" v)
-                                          (reset! a-atom v)))]
-                        (fn []
-                          [:div {:style {:cursor @cursor}}
-                           [:input {:type :text
-                                    :placeholder "github project URL"
-                                    :style {:width "100%"}
-                                    :value @value
-                                    :on-change #(on-change % value)}]
-                           [:input {:type :text
-                                    :style {:width "100%"}
-                                    :placeholder "optional github user-name"
-                                    :value @username
-                                    :on-change #(on-change % username)
-                                    }]
-                           [:br]
-                           [:input {:type :text
-                                    :placeholder "optional github password"
-                                    :value @password
-                                    :on-change #(on-change % password)
-                                    :style {:width "100%"}}]
-                           [:br]
-                           
-                           [:div.mdc-button
-                            {:on-click (fn [evt]
-                                         (let [git-url @value
-                                               repo-name (some-> git-url
-                                                                 (str/split "/")
-                                                                 last
-                                                                 (str/replace ".git" ""))
-                                               dir (str "/" repo-name)
-                                               files (atom [])]
-                                           (a/go
-                                             (reset! cursor :wait)
-                                             (swap! state/app-state assoc :current-project repo-name)
-                                             (swap! state/app-state assoc-in
-                                                    [:projects repo-name :git :username]
-                                                    @username)
-                                             (swap! state/app-state assoc-in
-                                                    [:projects repo-name :git :password]
-                                                    @password)
-                                             (a/<! (git/checkout {:url git-url
-                                                                  :dir dir}))
-                                             (a/<! (fs/walk-dir {:dir dir
-                                                                 :on-file (fn [file]
-                                                                            (when-not (re-find #".git" file)
-                                                                              (swap! files conj file)))}))
-
-                                             
-
-                                             (let [project-root (fs/mk-project-tree @files)]
-                                               (swap! state/app-state assoc-in
-                                                      [:projects repo-name :src-tree]
-                                                      project-root)
-                                               (hide-dialog)))))}
-                            "checkout"]])))]
+  (let [ ]
     [:div {:class "vertical-menu"
            :style {:position :absolute
                    :left (:x @context-menu-state)
                    :top (:y @context-menu-state)}}
+     [menu-item {:label "clone"
+                 :on-click #(show-dialog clone-ui)}]
      [menu-item {:label "checkout"
-                 :on-click #(show-dialog checkout-ui)}]
+                 :on-click #(show-dialog clone-ui)}]
      [menu-item {:label "branch"
                  :on-click #(show-dialog [:h1 "branch"])}]
      [menu-item {:label "commit"}]
