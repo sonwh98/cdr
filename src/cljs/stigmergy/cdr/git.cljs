@@ -14,6 +14,13 @@
                                    :singleBranch true
                                    :depth 10})))))
 
+(defn checkout [{:keys [url dir branch]}]
+  (a/go
+    (a/<! (await (js/git.checkout #js{:dir dir
+                                      :url url
+                                      :corsProxy "https://cors.isomorphic-git.org"
+                                      :ref branch})))))
+
 (comment
   (clone {:url "https://github.com/sonwh98/cdr.git"
           :dir "/cdr" })

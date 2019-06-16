@@ -100,12 +100,8 @@
                                              (swap! state/app-state assoc-in
                                                     [:projects repo-name :git :password]
                                                     @password)
-
-                                             (prn "username=" @username)
-                                             (prn "password=" @password)
-                                             
-                                             (a/<! (git/clone {:url git-url
-                                                               :dir dir}))
+                                             (a/<! (git/checkout {:url git-url
+                                                                  :dir dir}))
                                              (a/<! (fs/walk-dir {:dir dir
                                                                  :on-file (fn [file]
                                                                             (when-not (re-find #".git" file)
