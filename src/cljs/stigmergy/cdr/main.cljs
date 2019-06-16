@@ -53,17 +53,25 @@
 
 (defn context-menu [context-menu-state]
   (let [checkout-ui (fn []
-                      (let [value (r/atom "https://github.com/sonwh98/cdr.git")
+                      (let [value (r/atom "")
                             cursor (r/atom :auto)]
                         (fn []
                           [:div {:style {:cursor @cursor}}
                            [:input {:type :text
-                                    :placeholder "git URL"
+                                    :placeholder "github project URL"
                                     :style {:width "100%"}
                                     :value @value
                                     :on-change (fn [evt]
                                                  (reset! value (-> evt .-target .-value)))}]
-
+                           [:input {:type :text
+                                    :placeholder "optional github user-name"
+                                    :style {:width "100%"}}]
+                           [:br]
+                           [:input {:type :text
+                                    :placeholder "optional github password"
+                                    :style {:width "100%"}}]
+                           [:br]
+                           
                            [:div.mdc-button
                             {:on-click (fn [evt]
                                          (let [git-url @value
@@ -87,7 +95,7 @@
                                                       [:projects repo-name :src-tree]
                                                       project-root)
                                                (hide-dialog)))))}
-                            "GET"]])))]
+                            "checkout"]])))]
     [:div {:class "vertical-menu"
            :style {:position :absolute
                    :left (:x @context-menu-state)
