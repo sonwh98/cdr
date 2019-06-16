@@ -54,21 +54,31 @@
 (defn context-menu [context-menu-state]
   (let [checkout-ui (fn []
                       (let [value (r/atom "")
-                            cursor (r/atom :auto)]
+                            cursor (r/atom :auto)
+                            username (r/atom "")
+                            password (r/atom "")
+                            on-change (fn [evt a-atom]
+                                        (let [v (-> evt .-target .-value)]
+                                          (prn "v=" v)
+                                          (reset! a-atom v)))]
                         (fn []
                           [:div {:style {:cursor @cursor}}
                            [:input {:type :text
                                     :placeholder "github project URL"
                                     :style {:width "100%"}
                                     :value @value
-                                    :on-change (fn [evt]
-                                                 (reset! value (-> evt .-target .-value)))}]
+                                    :on-change #(on-change % value)}]
                            [:input {:type :text
+                                    :style {:width "100%"}
                                     :placeholder "optional github user-name"
-                                    :style {:width "100%"}}]
+                                    :value @username
+                                    :on-change #(on-change % username)
+                                    }]
                            [:br]
                            [:input {:type :text
                                     :placeholder "optional github password"
+                                    :value @password
+                                    :on-change #(on-change % password)
                                     :style {:width "100%"}}]
                            [:br]
                            
@@ -84,12 +94,25 @@
                                            (a/go
                                              (reset! cursor :wait)
                                              (swap! state/app-state assoc :current-project repo-name)
+                                             (swap! state/app-state assoc-in
+                                                    [:projects repo-name :git :username]
+                                                    @username)
+                                             (swap! state/app-state assoc-in
+                                                    [:projects repo-name :git :password]
+                                                    @password)
+
+                                             (prn "username=" @username)
+                                             (prn "password=" @password)
+                                             
                                              (a/<! (git/clone {:url git-url
                                                                :dir dir}))
                                              (a/<! (fs/walk-dir {:dir dir
                                                                  :on-file (fn [file]
                                                                             (when-not (re-find #".git" file)
                                                                               (swap! files conj file)))}))
+
+                                             
+
                                              (let [project-root (fs/mk-project-tree @files)]
                                                (swap! state/app-state assoc-in
                                                       [:projects repo-name :src-tree]
