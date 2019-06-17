@@ -19,12 +19,11 @@
             [stigmergy.cdr.dir-navigator :as dir]))
 
 (defn hide-context-menu []
-  (swap! state/app-state assoc-in [:project-manager :context-menu :visible?] false))
+  (swap! state/app-state assoc-in [:context-menu :visible?] false))
 
 (defn show-context-menu [x y]
   (swap! state/app-state update-in
-         [:project-manager
-          :context-menu]
+         [:context-menu]
          (fn [context-menu]
            (-> context-menu
                (assoc :visible? true)
@@ -119,6 +118,7 @@
   (let [ ]
     [:div {:class "vertical-menu"
            :style {:position :absolute
+                   :z-index 100
                    :left (:x @context-menu-state)
                    :top (:y @context-menu-state)}}
      [menu-item {:label "clone"
@@ -148,6 +148,12 @@
 (defn close-project-manager []
   (swap! state/app-state assoc-in [:project-manager :visible?] false))
 
+(defn contextmenu-handler [code-mirror evt]
+  (let [x (- (.-clientX evt) 15)
+        y (.-clientY evt)]
+    (.. evt preventDefault)
+    (show-context-menu x y)))
+
 (defn code-area [state]
   (let [code-text (r/cursor state [:code-text])
         codemirror (atom nil)]
@@ -163,7 +169,10 @@
                                                                              :keyMap "emacs"
                                                                              })]
                                (.. cm (setSize nil height))
-                               (.. cm (on "focus" close-project-manager))
+                               (.. cm (on "focus"#(do
+                                                    (close-project-manager)
+                                                    (hide-context-menu))))
+                               (.. cm (on "contextmenu" contextmenu-handler))
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
@@ -179,6 +188,11 @@
                                                            (prn s-expression)
                                                            (prn "r=" r)))}
                             "Eval"]]))})))
+
+
+(defn get-code-mirror []
+  (let [cm (js/document.querySelector ".CodeMirror")]
+    cm (.. cm -CodeMirror)))
 
 (defn project-manager [state]
   (let [{:keys [width height]} (util/get-dimensions)
@@ -199,28 +213,23 @@
                          :on-drag resize
                          :on-drag-end resize}])
         open-file (fn [{:keys [name dir-path] :as file}]
-                    (let [cm (js/document.querySelector ".CodeMirror")
-                          cm (.. cm -CodeMirror)
+                    (let [cm (get-code-mirror)
                           dir-path (str/join "/" dir-path)
                           file-name (str "/" dir-path "/" name)]
                       (a/go
                         (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                               file-content (util/array-buffer->str file-content)]
-                          (.. cm getDoc (setValue file-content))))))
-        attach-long-press (let [contextmenu-handler #(let [x (- (.-clientX %) 15)
-                                                           y (.-clientY %)]
-                                                       (.. % preventDefault)
-                                                       (show-context-menu x y))]
-                            (fn [this-component]
-                              (when-let [el (some-> this-component
-                                                    dom/dom-node 
-                                                    eve/with-long-press)]
-                                (.. el (addEventListener "contextmenu" contextmenu-handler))
-                                (.. el (addEventListener "longpress" contextmenu-handler)))))]
-    (r/create-class {:component-did-mount attach-long-press
+                          (.. cm getDoc (setValue file-content))))))]
+    (r/create-class {:component-did-mount (fn [this-component]
+                                            (when-let [el (some-> this-component
+                                                                  dom/dom-node 
+                                                                  eve/with-long-press)]
+                                              (.. el (addEventListener "contextmenu"
+                                                                       #(contextmenu-handler (get-code-mirror) %)))
+                                              (.. el (addEventListener "longpress"
+                                                                       #(contextmenu-handler (get-code-mirror) %)))))
                      :reagent-render (fn [state]
-                                       (let [context-menu-state (r/cursor state [:project-manager :context-menu])
-                                             dialog-state (r/cursor state [:dialog])
+                                       (let [dialog-state (r/cursor state [:dialog])
                                              width (or (-> @state :project-manager :width)
                                                        min-width)]
                                          [:div {:style {:position :absolute
@@ -233,8 +242,7 @@
                                                         :overflow-x :hidden
                                                         :overflow-y :auto}
                                                 :on-double-click #(hide-context-menu)}
-                                          (when (:visible? @context-menu-state)
-                                            [context-menu context-menu-state])
+                                          
                                           [dialog dialog-state]
                                           (for [[project-name {:keys [src-tree]}] (:projects @state)
                                                 :when (-> src-tree nil? not)
@@ -257,11 +265,16 @@
       [:button {:on-click toggle-project-manager-visibility} "Project"]]]))
 
 (defn main-ui [state]
-  [:div
-   [left-panel state]
-   (when (-> @state :project-manager :visible?)
-     [project-manager state])
-   [code-area state]])
+  (let [context-menu-state (r/cursor state [:context-menu])
+        project-manager-state (r/cursor state [:project-manager])]
+    (fn [state]
+      [:div
+       [left-panel state]
+       (when (-> @project-manager-state :visible?)
+         [project-manager project-manager-state])
+       (when (-> @context-menu-state :visible?)
+         [context-menu context-menu-state])
+       [code-area state]]))) 
 
 
 (defn init []
