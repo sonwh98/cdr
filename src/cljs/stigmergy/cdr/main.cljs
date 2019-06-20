@@ -105,8 +105,6 @@
                                                         (when-not (re-find #".git" file)
                                                           (swap! files conj file)))}))
 
-                         
-
                          (let [project-root (fs/mk-project-tree @files)]
                            (swap! state/app-state assoc-in
                                   [:projects repo-name :src-tree]
@@ -115,32 +113,31 @@
         "clone"]])))
 
 (defn context-menu [context-menu-state]
-  (let [ ]
-    [:div {:class "vertical-menu"
-           :style {:position :absolute
-                   :z-index 100
-                   :left (:x @context-menu-state)
-                   :top (:y @context-menu-state)}}
-     [menu-item {:label "clone"
-                 :on-click #(show-dialog clone-ui)}]
-     [menu-item {:label "checkout"
-                 :on-click #(show-dialog clone-ui)}]
-     [menu-item {:label "branch"
-                 :on-click #(show-dialog [:h1 "branch"])}]
-     [menu-item {:label "commit"}]
-     [menu-item {:label "push"}]
-     [menu-item {:label "reset"}]])
+  [:div {:class "vertical-menu"
+         :style {:position :absolute
+                 :z-index 100
+                 :left (:x @context-menu-state)
+                 :top (:y @context-menu-state)}}
+   [menu-item {:label "clone"
+               :on-click #(show-dialog clone-ui)}]
+   [menu-item {:label "checkout"
+               :on-click #(show-dialog clone-ui)}]
+   [menu-item {:label "branch"
+               :on-click #(show-dialog [:h1 "branch"])}]
+   [menu-item {:label "commit"}]
+   [menu-item {:label "push"}]
+   [menu-item {:label "reset"}]]
   )
 
 (defn dialog [dialog-state]
-  (when (:visible? @dialog-state)
-    [:div {:id "myModal", :class "modal"
-           :style {:display :block}}  
-     [:div {:class "modal-content"}
-      [:span {:class "close"
-              :on-click hide-dialog} "×"]
-      (some-> dialog-state deref :content)
-      #_[:p "Some text in the Modal.."]]]))
+  [:div {:id "myModal", :class "modal"
+         :style {:display :block
+                 :z-index 100}}
+   [:div {:class "modal-content"}
+    [:span {:class "close"
+            :on-click hide-dialog} "×"]
+    (some-> dialog-state deref :content)
+    #_[:p "Some text in the Modal.."]]])
 
 (defn toggle-project-manager-visibility []
   (swap! state/app-state update-in [:project-manager :visible?] not))
@@ -229,8 +226,7 @@
                                               (.. el (addEventListener "longpress"
                                                                        #(contextmenu-handler (get-code-mirror) %)))))
                      :reagent-render (fn [state]
-                                       (let [dialog-state (r/cursor state [:dialog])
-                                             width (or (-> @state :project-manager :width)
+                                       (let [width (or (-> @state :project-manager :width)
                                                        min-width)]
                                          [:div {:style {:position :absolute
                                                         :left 20
@@ -242,8 +238,9 @@
                                                         :overflow-x :hidden
                                                         :overflow-y :auto}
                                                 :on-double-click #(hide-context-menu)}
+
                                           
-                                          [dialog dialog-state]
+                                          
                                           (for [[project-name {:keys [src-tree]}] (:projects @state)
                                                 :when (-> src-tree nil? not)
                                                 :let [st (r/cursor state [:projects project-name :src-tree])]]
@@ -266,7 +263,8 @@
 
 (defn main-ui [state]
   (let [context-menu-state (r/cursor state [:context-menu])
-        project-manager-state (r/cursor state [:project-manager])]
+        project-manager-state (r/cursor state [:project-manager])
+        dialog-state (r/cursor state [:dialog])]
     (fn [state]
       [:div
        [left-panel state]
@@ -274,6 +272,8 @@
          [project-manager project-manager-state])
        (when (-> @context-menu-state :visible?)
          [context-menu context-menu-state])
+       (when (-> @dialog-state :visible?)
+         [dialog dialog-state])
        [code-area state]]))) 
 
 
