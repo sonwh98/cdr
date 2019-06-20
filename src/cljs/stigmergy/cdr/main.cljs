@@ -44,8 +44,7 @@
                                                                content)]
                                                  (-> dialog-state
                                                      (assoc :visible? true)
-                                                     (assoc :content content)))))
-  )
+                                                     (assoc :content content))))))
 
 (defn hide-dialog []
   (swap! state/app-state assoc-in [:dialog :visible?] false))
@@ -78,7 +77,6 @@
                 :on-change #(on-change % password)
                 :style {:width "100%"}}]
        [:br]
-       
        [:div.mdc-button
         {:on-click (fn [evt]
                      (let [git-url @value
@@ -87,10 +85,10 @@
                                              last
                                              (str/replace ".git" ""))
                            dir (str "/" repo-name)
-                           files (atom [])]
+                           files (atom [])                           ]
                        (a/go
                          (reset! cursor :wait)
-                         (swap! state/app-state assoc :current-project repo-name)
+                         #_(swap! state/app-state assoc :current-project repo-name)
                          (swap! state/app-state assoc-in
                                 [:projects repo-name :git :username]
                                 @username)
@@ -99,15 +97,11 @@
                                 @password)
                          (a/<! (git/clone {:url git-url
                                            :dir dir}))
-                         (a/<! (fs/walk-dir {:dir dir
-                                             :on-file (fn [file]
-                                                        (when-not (re-find #".git" file)
-                                                          (swap! files conj file)))}))
 
-                         (let [project-root (fs/mk-project-tree @files)]
+                         (let [src-tree (a/<! (fs/mk-dir-tree dir))]
                            (swap! state/app-state assoc-in
                                   [:projects repo-name :src-tree]
-                                  project-root)
+                                  src-tree)
                            (hide-dialog)))))}
         "clone"]])))
 
@@ -220,6 +214,14 @@
                                             (when-let [el (some-> this-component
                                                                   dom/dom-node 
                                                                   eve/with-long-press)]
+                                              (a/go (let [git-repositories (a/<! (fs/ls "/"))]
+                                                      (doseq [repo-name git-repositories]
+                                                        (let [dir (str "/" repo-name)
+                                                              src-tree (a/<! (fs/mk-dir-tree dir))]
+                                                          (swap! state/app-state assoc-in
+                                                                 [:projects repo-name :src-tree]
+                                                                 src-tree)))))
+                                              
                                               (.. el (addEventListener "contextmenu"
                                                                        #(contextmenu-handler (get-code-mirror) %)))
                                               (.. el (addEventListener "longpress"
@@ -237,7 +239,7 @@
                                                         :overflow-x :hidden
                                                         :overflow-y :auto}
                                                 :on-double-click #(hide-context-menu)}
-                                          
+
                                           (for [[project-name {:keys [src-tree]}] @projects-state
                                                 :when (-> src-tree nil? not)
                                                 :let [st (r/cursor projects-state [project-name :src-tree])]]

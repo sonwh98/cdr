@@ -82,7 +82,9 @@
                              (conj node n)))))
       :else node)))
 
-(defn mk-project-tree [files]
+(defn mk-tree
+  "builds a tree by parsing a the string structure of a file path"
+  [files]
   (let [paths (mapv (fn [f]
                       (-> f (str/split #"/") rest vec))
                     files)]
@@ -91,11 +93,21 @@
             {}
             paths)))
 
+(defn mk-dir-tree
+  "builds a tree given the directory name"
+  [dir]
+  (a/go (let [files (atom [])]
+          (a/<! (walk-dir {:dir dir
+                           :on-file (fn [file]
+                                      (when-not (re-find #".git" file)
+                                        (swap! files conj file)))}))
+          (mk-tree @files))))
+
 (comment
   (walk-dir {:dir "/"
              :on-file (fn [file]
                         (prn file))})
 
   (a/go
-    (prn (a/<! (ls "/foo"))))
+    (prn (a/<! (ls "/"))))
   )
