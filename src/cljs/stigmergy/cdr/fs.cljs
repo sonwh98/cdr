@@ -20,6 +20,13 @@
             (when on-file
               (on-file f-full-path))))))))
 
+(defn ls [dir]
+  (a/go
+    (let [[err files] (a/<! (await (js/window.pfs.readdir dir)))]
+      (if err
+        err
+        (seq files)))))
+
 (defn- map-value->vector [m]
   (let [k (-> m keys first)
         v (m k)]
@@ -83,3 +90,12 @@
               (attach acc p p))
             {}
             paths)))
+
+(comment
+  (walk-dir {:dir "/"
+             :on-file (fn [file]
+                        (prn file))})
+
+  (a/go
+    (prn (a/<! (ls "/foo"))))
+  )
