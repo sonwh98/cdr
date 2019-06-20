@@ -10,9 +10,9 @@
                                                 :username ""
                                                 :password ""}
                                           :src-tree nil}}
-                        :project-manager {:visible? true
-                                          :context-menu {:x 0 :y 0
-                                                         :visible? false}}
+                        :project-manager {:visible? true}
+                        :context-menu {:x 0 :y 0
+                                       :visible? false}
                         :dialog {:visible? false
                                  :content nil}
                         }))
