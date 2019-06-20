@@ -57,7 +57,6 @@
         password (r/atom "")
         on-change (fn [evt a-atom]
                     (let [v (-> evt .-target .-value)]
-                      (prn "v=" v)
                       (reset! a-atom v)))]
     (fn []
       [:div {:style {:cursor @cursor}}
@@ -126,8 +125,7 @@
                :on-click #(show-dialog [:h1 "branch"])}]
    [menu-item {:label "commit"}]
    [menu-item {:label "push"}]
-   [menu-item {:label "reset"}]]
-  )
+   [menu-item {:label "reset"}]])
 
 (defn dialog [dialog-state]
   [:div {:id "myModal", :class "modal"
@@ -216,7 +214,8 @@
                       (a/go
                         (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                               file-content (util/array-buffer->str file-content)]
-                          (.. cm getDoc (setValue file-content))))))]
+                          (.. cm getDoc (setValue file-content))))))
+        projects-state (r/cursor state/app-state [:projects])]
     (r/create-class {:component-did-mount (fn [this-component]
                                             (when-let [el (some-> this-component
                                                                   dom/dom-node 
@@ -238,12 +237,10 @@
                                                         :overflow-x :hidden
                                                         :overflow-y :auto}
                                                 :on-double-click #(hide-context-menu)}
-
                                           
-                                          
-                                          (for [[project-name {:keys [src-tree]}] (:projects @state)
+                                          (for [[project-name {:keys [src-tree]}] @projects-state
                                                 :when (-> src-tree nil? not)
-                                                :let [st (r/cursor state [:projects project-name :src-tree])]]
+                                                :let [st (r/cursor projects-state [project-name :src-tree])]]
                                             ^{:key project-name} [dir/tree {:node st :on-click open-file}])
                                           [gripper]]))})))
 
