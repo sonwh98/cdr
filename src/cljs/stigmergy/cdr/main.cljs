@@ -248,7 +248,7 @@
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree nil? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]
-                                ^{:key project-name} [dir/tree2 {:node st :on-click open-file}])
+                                ^{:key project-name} [dir/tree {:node st :on-click open-file}])
                               [gripper]]))}))
   
   )

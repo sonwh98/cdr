@@ -35,16 +35,7 @@
                             [dir child on-click])
                  {:key (str c)}))))]])
 
-#_(defn tree [{:keys [node on-click] :as args}]
-    (prn "tree " node)
-    (when-not (empty? @node)
-      [:ul {:style {:list-style-type :none
-                    :overflow :auto
-                    :margin 0
-                    :padding 0}}
-       [dir node on-click]]))
-
-(defn tree2 [{:keys [node on-click] :as args}]
+(defn tree [{:keys [node on-click] :as args}]
   (when-not (empty? @node)
     [:ul {:style {:list-style-type :none
                   :overflow :auto
