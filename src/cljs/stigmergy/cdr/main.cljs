@@ -249,9 +249,7 @@
                                     :when (-> src-tree nil? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]
                                 ^{:key project-name} [dir/tree {:node st :on-click open-file}])
-                              [gripper]]))}))
-  
-  )
+                              [gripper]]))})))
 
 (defn left-panel []
   (let [{:keys [width height]} (util/get-dimensions)
