@@ -16,7 +16,6 @@
   (-> node vals first))
 
 (defn dir [node on-click]
-  (log/info "dir " (keys @node))
   [:li
    [:span {:class "dir"
            :on-click #(toggle node %)} (get-name @node)]
@@ -46,16 +45,12 @@
        [dir node on-click]]))
 
 (defn tree2 [{:keys [node on-click] :as args}]
-  (prn "tree " )
   (when-not (empty? @node)
-    (prn "tree1 " (keys @node))
     [:ul {:style {:list-style-type :none
                   :overflow :auto
                   :margin 0
                   :padding 0}}
-     [dir node on-click]
-
-     ]))
+     [dir node on-click]]))
 
 (comment
   {"cdr"

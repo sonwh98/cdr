@@ -106,7 +106,6 @@
         "clone"]])))
 
 (defn context-menu [context-menu-state]
-  (log/info "context-menu-state")
   [:div {:class "vertical-menu"
          :style {:position :absolute
                  :z-index 100
@@ -123,7 +122,6 @@
    [menu-item {:label "reset"}]])
 
 (defn dialog [dialog-state]
-  (log/info "dialog")
   [:div {:id "myModal", :class "modal"
          :style {:display :block
                  :z-index 100}}
@@ -146,7 +144,6 @@
     (show-context-menu x y)))
 
 (defn code-area [state]
-  (log/info "code-are")
   (let [code-text (r/cursor state [:code-text])
         codemirror (atom nil)]
     (r/create-class
@@ -231,7 +228,6 @@
                                                       #(contextmenu-handler (get-code-mirror) %)))))
                          :reagent-render
                          (fn [project-manager-state]
-                           (log/info "project-manager")
                            (let [width (or (-> @project-manager-state :width)
                                            min-width)
                                  projects-state (r/cursor state/app-state [:projects])]
@@ -251,16 +247,13 @@
 
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree nil? not)
-                                    :let [st (r/cursor projects-state [project-name :src-tree])
-                                          _ (log/info "render tree " project-name)]
-                                    ]
+                                    :let [st (r/cursor projects-state [project-name :src-tree])]]
                                 ^{:key project-name} [dir/tree2 {:node st :on-click open-file}])
                               [gripper]]))}))
   
   )
 
 (defn left-panel []
-  (log/info "left-panel")
   (let [{:keys [width height]} (util/get-dimensions)
         half-height (- (/ height 2) 10)] 
     [:div {:style {:position :absolute
@@ -278,13 +271,11 @@
   (let [context-menu-state (r/cursor state [:context-menu])
         project-manager-state (r/cursor state [:project-manager])
         dialog-state (r/cursor state [:dialog])]
-    (log/info "main-ui1")
+
     (fn [state]
-      (log/info "main-ui2")
+
       [:div
        [left-panel]
-       #_(when (-> @project-manager-state :visible?)
-           [project-manager project-manager-state])
        [project-manager project-manager-state]
        (when (-> @context-menu-state :visible?)
          [context-menu context-menu-state])
