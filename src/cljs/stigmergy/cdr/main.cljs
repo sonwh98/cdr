@@ -213,7 +213,7 @@
                          (fn [this-component]
                            (when-let [el (some-> this-component
                                                  dom/dom-node 
-                                                 eve/with-long-press)]
+                                                 #_eve/with-long-press)]
                              (a/go (let [git-repositories (a/<! (fs/ls "/"))]
                                      (doseq [repo-name git-repositories]
                                        (let [dir (str "/" repo-name)
@@ -224,8 +224,8 @@
                              
                              (.. el (addEventListener "contextmenu"
                                                       #(contextmenu-handler (get-code-mirror) %)))
-                             (.. el (addEventListener "longpress"
-                                                      #(contextmenu-handler (get-code-mirror) %)))))
+                             #_(.. el (addEventListener "longpress"
+                                                        #(contextmenu-handler (get-code-mirror) %)))))
                          :reagent-render
                          (fn [project-manager-state]
                            (let [width (or (-> @project-manager-state :width)
