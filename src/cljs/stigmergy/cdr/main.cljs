@@ -243,7 +243,7 @@
                                             :width width
                                             :overflow-x :hidden
                                             :overflow-y :auto}
-                                    :on-double-click #(hide-context-menu)}
+                                    :on-click #(hide-context-menu)}
 
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree nil? not)
