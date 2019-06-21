@@ -1,6 +1,7 @@
 (ns stigmergy.cdr.dir-navigator
   (:require [stigmergy.tily :as tily]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [taoensso.timbre :as log :include-macros true]))
 
 (defn toggle [node evt]
   (let [element (.-target evt)
@@ -15,6 +16,7 @@
   (-> node vals first))
 
 (defn dir [node on-click]
+  (log/info "dir " (keys @node))
   [:li
    [:span {:class "dir"
            :on-click #(toggle node %)} (get-name @node)]
@@ -34,13 +36,26 @@
                             [dir child on-click])
                  {:key (str c)}))))]])
 
-(defn tree [{:keys [node on-click] :as args}]
+#_(defn tree [{:keys [node on-click] :as args}]
+    (prn "tree " node)
+    (when-not (empty? @node)
+      [:ul {:style {:list-style-type :none
+                    :overflow :auto
+                    :margin 0
+                    :padding 0}}
+       [dir node on-click]]))
+
+(defn tree2 [{:keys [node on-click] :as args}]
+  (prn "tree " )
   (when-not (empty? @node)
+    (prn "tree1 " (keys @node))
     [:ul {:style {:list-style-type :none
                   :overflow :auto
                   :margin 0
                   :padding 0}}
-     [dir node on-click]]))
+     [dir node on-click]
+
+     ]))
 
 (comment
   {"cdr"
