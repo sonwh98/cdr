@@ -106,6 +106,7 @@
         "clone"]])))
 
 (defn context-menu [context-menu-state]
+  (log/info "context-menu-state")
   [:div {:class "vertical-menu"
          :style {:position :absolute
                  :z-index 100
@@ -122,6 +123,7 @@
    [menu-item {:label "reset"}]])
 
 (defn dialog [dialog-state]
+  (log/info "dialog")
   [:div {:id "myModal", :class "modal"
          :style {:display :block
                  :z-index 100}}
@@ -144,6 +146,7 @@
     (show-context-menu x y)))
 
 (defn code-area [state]
+  (log/info "code-are")
   (let [code-text (r/cursor state [:code-text])
         codemirror (atom nil)]
     (r/create-class
@@ -183,70 +186,79 @@
   (let [cm (js/document.querySelector ".CodeMirror")]
     cm (.. cm -CodeMirror)))
 
-(defn project-manager [state]
-  (let [{:keys [width height]} (util/get-dimensions)
-        min-width (/ width 4)
-        resize (fn [evt]
-                 (let [x (.-clientX evt)]
-                   (if (< x min-width)
-                     (swap! state assoc-in [:project-manager :width] min-width)
-                     (swap! state assoc-in [:project-manager :width] x))))
-        gripper (fn []
-                  [:div {:draggable true
-                         :style {:position :absolute
-                                 :cursor :ew-resize
-                                 :top 0
-                                 :right 0
-                                 :width 5
-                                 :height "100%"}
-                         :on-drag resize
-                         :on-drag-end resize}])
-        open-file (fn [{:keys [name dir-path] :as file}]
-                    (let [cm (get-code-mirror)
-                          dir-path (str/join "/" dir-path)
-                          file-name (str "/" dir-path "/" name)]
-                      (a/go
-                        (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
-                              file-content (util/array-buffer->str file-content)]
-                          (.. cm getDoc (setValue file-content))))))
-        projects-state (r/cursor state/app-state [:projects])]
-    (r/create-class {:component-did-mount (fn [this-component]
-                                            (when-let [el (some-> this-component
-                                                                  dom/dom-node 
-                                                                  eve/with-long-press)]
-                                              (a/go (let [git-repositories (a/<! (fs/ls "/"))]
-                                                      (doseq [repo-name git-repositories]
-                                                        (let [dir (str "/" repo-name)
-                                                              src-tree (a/<! (fs/mk-dir-tree dir))]
-                                                          (swap! state/app-state assoc-in
-                                                                 [:projects repo-name :src-tree]
-                                                                 src-tree)))))
-                                              
-                                              (.. el (addEventListener "contextmenu"
-                                                                       #(contextmenu-handler (get-code-mirror) %)))
-                                              (.. el (addEventListener "longpress"
-                                                                       #(contextmenu-handler (get-code-mirror) %)))))
-                     :reagent-render (fn [state]
-                                       (let [width (or (-> @state :project-manager :width)
-                                                       min-width)]
-                                         [:div {:style {:position :absolute
-                                                        :left 20
-                                                        :top 0
-                                                        :z-index 20
-                                                        :background-color :white
-                                                        :height "100%"
-                                                        :width width
-                                                        :overflow-x :hidden
-                                                        :overflow-y :auto}
-                                                :on-double-click #(hide-context-menu)}
+(def project-manager (r/create-class
+                      {:component-did-mount
+                       (fn [this-component]
+                         (when-let [el (some-> this-component
+                                               dom/dom-node 
+                                               eve/with-long-press)]
+                           (a/go (let [git-repositories (a/<! (fs/ls "/"))]
+                                   (doseq [repo-name git-repositories]
+                                     (let [dir (str "/" repo-name)
+                                           src-tree (a/<! (fs/mk-dir-tree dir))]
+                                       (swap! state/app-state assoc-in
+                                              [:projects repo-name :src-tree]
+                                              src-tree)))))
+                           
+                           (.. el (addEventListener "contextmenu"
+                                                    #(contextmenu-handler (get-code-mirror) %)))
+                           (.. el (addEventListener "longpress"
+                                                    #(contextmenu-handler (get-code-mirror) %)))))
+                       :reagent-render
+                       (fn [project-manager-state]
+                         (log/info "project-manager")
+                         (when (-> @project-manager-state :visible?)
+                           (let [ ;; width (or (-> @project-manager-state :project-manager :width)
+                                 ;;           min-width)
+                                 {:keys [width height]} (util/get-dimensions)
+                                 min-width (/ width 4)
+                                 width (or (-> @project-manager-state :width)
+                                           min-width)
+                                 resize (fn [evt]
+                                          (let [x (.-clientX evt)]
+                                            (if (< x min-width)
+                                              (swap! project-manager-state assoc-in [:width] min-width)
+                                              (swap! project-manager-state assoc-in [:width] x))))
+                                 gripper (fn []
+                                           [:div {:draggable true
+                                                  :style {:position :absolute
+                                                          :cursor :ew-resize
+                                                          :top 0
+                                                          :right 0
+                                                          :width 5
+                                                          :height "100%"}
+                                                  :on-drag resize
+                                                  :on-drag-end resize}])
+                                 open-file (fn [{:keys [name dir-path] :as file}]
+                                             (let [cm (get-code-mirror)
+                                                   dir-path (str/join "/" dir-path)
+                                                   file-name (str "/" dir-path "/" name)]
+                                               (a/go
+                                                 (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
+                                                       file-content (util/array-buffer->str file-content)]
+                                                   (.. cm getDoc (setValue file-content))))))
+                                 projects-state (r/cursor state/app-state [:projects])]
+                             [:div {:style {:position :absolute
+                                            :left 20
+                                            :top 0
+                                            :z-index 20
+                                            :background-color :white
+                                            :height "100%"
+                                            :width width
+                                            :overflow-x :hidden
+                                            :overflow-y :auto}
+                                    :on-double-click #(hide-context-menu)}
 
-                                          (for [[project-name {:keys [src-tree]}] @projects-state
-                                                :when (-> src-tree nil? not)
-                                                :let [st (r/cursor projects-state [project-name :src-tree])]]
-                                            ^{:key project-name} [dir/tree {:node st :on-click open-file}])
-                                          [gripper]]))})))
+                              (for [[project-name {:keys [src-tree]}] @projects-state
+                                    :when (-> src-tree nil? not)
+                                    :let [st (r/cursor projects-state [project-name :src-tree])]]
+                                ^{:key project-name} [dir/tree {:node st :on-click open-file}])
+                              [gripper]])))})
+  
+  )
 
-(defn left-panel [state]
+(defn left-panel []
+  (log/info "left-panel")
   (let [{:keys [width height]} (util/get-dimensions)
         half-height (- (/ height 2) 10)] 
     [:div {:style {:position :absolute
@@ -264,11 +276,14 @@
   (let [context-menu-state (r/cursor state [:context-menu])
         project-manager-state (r/cursor state [:project-manager])
         dialog-state (r/cursor state [:dialog])]
+    (log/info "main-ui1")
     (fn [state]
+      (log/info "main-ui2")
       [:div
-       [left-panel state]
-       (when (-> @project-manager-state :visible?)
-         [project-manager project-manager-state])
+       [left-panel]
+       #_(when (-> @project-manager-state :visible?)
+           [project-manager project-manager-state])
+       [project-manager project-manager-state]
        (when (-> @context-menu-state :visible?)
          [context-menu context-menu-state])
        (when (-> @dialog-state :visible?)
