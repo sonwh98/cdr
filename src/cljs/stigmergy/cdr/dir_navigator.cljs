@@ -35,7 +35,7 @@
                             [dir (merge args {:node child}) ])
                  {:key (str c)}))))]])
 
-(defn tree [{:keys [node on-click] :as args}]
+(defn tree [{:keys [node] :as args}]
   (when-not (empty? @node)
     [:ul {:style {:list-style-type :none
                   :overflow :auto
