@@ -115,7 +115,6 @@
                                :on-click #(show-dialog clone-ui)}]
                    [menu-item {:label "checkout"
                                :on-click #(show-dialog clone-ui)}]
-                   
                    [menu-item {:label "branch"
                                :on-click #(show-dialog [:h1 "branch"])}]
                    [menu-item {:label "commit"}]
@@ -125,10 +124,11 @@
 
 (def git-file-menu [[menu-label {:label "Git"}]
                     [menu-item {:label "commit"}]
-                    [menu-item {:label "history"}]
                     [menu-item {:label "diff"}]
-                    [menu-item {:label "reset"}]
+                    [menu-item {:label "history"}]
                     [menu-item {:label "rename"}]
+                    [menu-item {:label "reset"}]
+                    [menu-item {:label "rm"}]
                     ])
 
 (defn context-menu [context-menu-state]
