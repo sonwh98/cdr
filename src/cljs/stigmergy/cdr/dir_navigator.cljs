@@ -15,7 +15,7 @@
 (defn get-children [node]
   (-> node vals first))
 
-(defn dir [{:keys [node on-click] :as args}]
+(defn dir [{:keys [node on-click on-context-menu] :as args}]
   [:li
    [:span {:class "dir"
            :on-click #(toggle node %)} (get-name @node)]
@@ -29,9 +29,11 @@
                          child (r/cursor node [k index])]]
                (with-meta (if-let [file-name (:name c)]
                             [:li {:on-click #(on-click c)
-                                  :on-context-menu #(do
+                                  :on-context-menu #(let [x (- (.-clientX %) 15)
+                                                          y (.-clientY %)]
                                                       (.. % preventDefault)
-                                                      (js/alert "right"))} file-name]
+                                                      (on-context-menu x y)
+                                                      )} file-name]
                             [dir (merge args {:node child}) ])
                  {:key (str c)}))))]])
 

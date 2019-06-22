@@ -127,7 +127,9 @@
                     [menu-item {:label "commit"}]
                     [menu-item {:label "history"}]
                     [menu-item {:label "diff"}]
-                    [menu-item {:label "reset"}]])
+                    [menu-item {:label "reset"}]
+                    [menu-item {:label "rename"}]
+                    ])
 
 (defn context-menu [context-menu-state]
   (into [:div {:class "vertical-menu"
@@ -279,7 +281,10 @@
                                     :when (-> src-tree nil? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]
                                 ^{:key project-name} [dir/tree {:node st :on-click open-file
-                                                                ;;:on-context-menu show-git-file-menu
+                                                                :on-context-menu (fn [x y]
+                                                                                   (show-context-menu
+                                                                                    {:x x :y y
+                                                                                     :menu-items git-file-menu}))
                                                                 }])
                               [gripper]]))})))
 
