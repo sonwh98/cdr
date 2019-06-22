@@ -21,14 +21,8 @@
 (defn hide-context-menu []
   (swap! state/app-state assoc-in [:context-menu :visible?] false))
 
-(defn show-context-menu [x y]
-  (swap! state/app-state update-in
-         [:context-menu]
-         (fn [context-menu]
-           (-> context-menu
-               (assoc :visible? true)
-               (assoc :x x)
-               (assoc :y y)))))
+(defn show-context-menu [{:keys [x y menu-items] :as params}]
+  (swap! state/app-state assoc-in [:context-menu] (merge params {:visible? true})))
 
 (defn menu-item [{:keys [label on-click]}]
   [:a {:href "#"
@@ -36,6 +30,20 @@
                     (hide-context-menu)
                     (when on-click
                       (on-click %)))} label])
+
+(defn menu-label [{:keys [label on-click]}]
+  [:div {:style {:background-color "#eee"
+                 :color :black
+                 :padding 0
+                 :margin 0}} label
+   [:svg {:height 1 :width "100%"}
+    [:line {:x1 0 :y1 0
+            :x2 "100%" :y2 0
+            :style {:stroke :black
+                    :stroke-width 2}}]]])
+
+(defn hide-dialog []
+  (swap! state/app-state assoc-in [:dialog :visible?] false))
 
 (defn show-dialog [content]
   (swap! state/app-state update-in [:dialog] (fn [dialog-state]
@@ -45,9 +53,6 @@
                                                  (-> dialog-state
                                                      (assoc :visible? true)
                                                      (assoc :content content))))))
-
-(defn hide-dialog []
-  (swap! state/app-state assoc-in [:dialog :visible?] false))
 
 (defn clone-ui []
   (let [value (r/atom "")
@@ -105,21 +110,26 @@
                            (hide-dialog)))))}
         "clone"]])))
 
+(def git-top-menu [[menu-label {:label "Git"}]
+                   [menu-item {:label "clone"
+                               :on-click #(show-dialog clone-ui)}]
+                   [menu-item {:label "checkout"
+                               :on-click #(show-dialog clone-ui)}]
+                   
+                   [menu-item {:label "branch"
+                               :on-click #(show-dialog [:h1 "branch"])}]
+                   [menu-item {:label "commit"}]
+                   [menu-item {:label "pull"}]
+                   [menu-item {:label "push"}]
+                   [menu-item {:label "reset"}]])
+
 (defn context-menu [context-menu-state]
-  [:div {:class "vertical-menu"
-         :style {:position :absolute
-                 :z-index 100
-                 :left (:x @context-menu-state)
-                 :top (:y @context-menu-state)}}
-   [menu-item {:label "clone"
-               :on-click #(show-dialog clone-ui)}]
-   [menu-item {:label "checkout"
-               :on-click #(show-dialog clone-ui)}]
-   [menu-item {:label "branch"
-               :on-click #(show-dialog [:h1 "branch"])}]
-   [menu-item {:label "commit"}]
-   [menu-item {:label "push"}]
-   [menu-item {:label "reset"}]])
+  (into [:div {:class "vertical-menu"
+               :style {:position :absolute
+                       :z-index 100
+                       :left (:x @context-menu-state)
+                       :top (:y @context-menu-state)}}]
+        (:menu-items @context-menu-state)))
 
 (defn dialog [dialog-state]
   [:div {:id "myModal", :class "modal"
@@ -136,12 +146,6 @@
 
 (defn close-project-manager []
   (swap! state/app-state assoc-in [:project-manager :visible?] false))
-
-(defn context-menu-handler [code-mirror evt]
-  (let [x (- (.-clientX evt) 15)
-        y (.-clientY evt)]
-    (.. evt preventDefault)
-    (show-context-menu x y)))
 
 (defn code-area [state]
   (let [codemirror (atom nil)]
@@ -160,7 +164,22 @@
                                (.. cm (on "focus"#(do
                                                     (close-project-manager)
                                                     (hide-context-menu))))
-                               (.. cm (on "contextmenu" context-menu-handler))
+                               (.. cm (on "contextmenu"
+                                          (fn [code-mirror evt]
+                                            (let [x (- (.-clientX evt) 15)
+                                                  y (.-clientY evt)]
+                                              (.. evt preventDefault)
+                                              (show-context-menu
+                                               {:x x :y y
+                                                :menu-items [[menu-item {:label "foobar"
+                                                                         :on-click #(show-dialog clone-ui)}]
+                                                             [menu-item {:label "checkout"
+                                                                         :on-click #(show-dialog clone-ui)}]
+                                                             [menu-item {:label "branch"
+                                                                         :on-click #(show-dialog [:h1 "branch"])}]
+                                                             [menu-item {:label "commit"}]
+                                                             [menu-item {:label "push"}]
+                                                             [menu-item {:label "reset"}]]})))))
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
@@ -222,7 +241,13 @@
                                                 src-tree)))))
                              
                              (.. el (addEventListener "contextmenu"
-                                                      #(context-menu-handler (get-code-mirror) %)))
+                                                      (fn [evt]
+                                                        (let [x (- (.-clientX evt) 15)
+                                                              y (.-clientY evt)]
+                                                          (.. evt preventDefault)
+                                                          (show-context-menu
+                                                           {:x x :y y
+                                                            :menu-items git-top-menu})))))
                              #_(.. el (addEventListener "longpress"
                                                         #(contextmenu-handler (get-code-mirror) %)))))
                          :reagent-render
