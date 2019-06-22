@@ -217,6 +217,10 @@
                                            (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
                                                  file-content (util/array-buffer->str file-content)]
                                              (.. cm getDoc (setValue file-content))))))
+                           show-file-options (fn [x y]
+                                               (show-context-menu
+                                                {:x x :y y
+                                                 :menu-items git-file-menu}))
                            {:keys [width height]} (util/get-dimensions)
                            project-manager-state (r/cursor state/app-state [:project-manager])
                            min-width (/ width 4)
@@ -281,11 +285,7 @@
                                     :when (-> src-tree nil? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]
                                 ^{:key project-name} [dir/tree {:node st :on-click open-file
-                                                                :on-context-menu (fn [x y]
-                                                                                   (show-context-menu
-                                                                                    {:x x :y y
-                                                                                     :menu-items git-file-menu}))
-                                                                }])
+                                                                :on-context-menu show-file-options}])
                               [gripper]]))})))
 
 (defn left-panel []
