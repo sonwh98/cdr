@@ -137,7 +137,7 @@
 (defn close-project-manager []
   (swap! state/app-state assoc-in [:project-manager :visible?] false))
 
-(defn contextmenu-handler [code-mirror evt]
+(defn context-menu-handler [code-mirror evt]
   (let [x (- (.-clientX evt) 15)
         y (.-clientY evt)]
     (.. evt preventDefault)
@@ -160,7 +160,7 @@
                                (.. cm (on "focus"#(do
                                                     (close-project-manager)
                                                     (hide-context-menu))))
-                               (.. cm (on "contextmenu" contextmenu-handler))
+                               (.. cm (on "contextmenu" context-menu-handler))
                                (reset! codemirror cm)
                                (js/parinferCodeMirror.init cm)))
       :reagent-render (fn [state]
@@ -222,7 +222,7 @@
                                                 src-tree)))))
                              
                              (.. el (addEventListener "contextmenu"
-                                                      #(contextmenu-handler (get-code-mirror) %)))
+                                                      #(context-menu-handler (get-code-mirror) %)))
                              #_(.. el (addEventListener "longpress"
                                                         #(contextmenu-handler (get-code-mirror) %)))))
                          :reagent-render
