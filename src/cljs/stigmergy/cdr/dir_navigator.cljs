@@ -15,7 +15,7 @@
 (defn get-children [node]
   (-> node vals first))
 
-(defn dir [node on-click]
+(defn dir [{:keys [node on-click] :as args}]
   [:li
    [:span {:class "dir"
            :on-click #(toggle node %)} (get-name @node)]
@@ -32,7 +32,7 @@
                                   :on-context-menu #(do
                                                       (.. % preventDefault)
                                                       (js/alert "right"))} file-name]
-                            [dir child on-click])
+                            [dir (merge args {:node child}) ])
                  {:key (str c)}))))]])
 
 (defn tree [{:keys [node on-click] :as args}]
@@ -41,4 +41,4 @@
                   :overflow :auto
                   :margin 0
                   :padding 0}}
-     [dir node on-click]]))
+     [dir args]]))
