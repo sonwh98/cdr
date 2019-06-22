@@ -144,8 +144,7 @@
     (show-context-menu x y)))
 
 (defn code-area [state]
-  (let [code-text (r/cursor state [:code-text])
-        codemirror (atom nil)]
+  (let [codemirror (atom nil)]
     (r/create-class
      {:component-did-mount (fn [this]
                              (let [{:keys [width height]} (util/get-dimensions)
