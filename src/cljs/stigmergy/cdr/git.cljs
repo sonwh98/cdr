@@ -55,11 +55,33 @@
         err
         (mapv vec status)))))
 
+(defn commit [dir msg]
+  (a/go
+    (let [sha (a/<! (await (js/git.commit (clj->js {:dir dir
+                                                    :message msg
+                                                    :author #js{:name "Sun Tzu"
+                                                                :email "son.c.to@gmail.com"}}))))]
+      sha)))
+
+(defn log [dir]
+  (a/go
+    (let [[err result] (a/<! (await (js/git.log (clj->js {:dir dir
+                                                          :ref "master"}))))]
+      (if err
+        err
+        (map util/obj->clj result)))))
+
 (comment
   (fs/write-file "/cdr/project.clj" (util/str->array-buffer "hello world3"))
+
+  (a/go
+    (prn (first (a/<! (log "/cdr")))))
   
   (a/go
-    (prn (a/<! (status {:dir "/cdr" :filepath "project.clj"}))))
+    (prn (a/<! (commit "/cdr" "foo")))    )
+  
+  (a/go
+    (prn (a/<! (status {:dir "/cdr" }))))
 
   (a/go
     (prn (a/<! (status-matrix {:dir "/cdr" :pattern "*"}))))
