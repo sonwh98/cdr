@@ -128,8 +128,17 @@
                     [menu-item {:label "history"}]
                     [menu-item {:label "rename"}]
                     [menu-item {:label "reset"}]
-                    [menu-item {:label "rm"}]
-                    ])
+                    [menu-item {:label "rm"
+                                :on-click #(js/alert "rm")}]
+                    [menu-item {:label "status"
+                                :on-click #(a/go
+                                             (let [selected-node (-> @state/app-state :selected-node)
+                                                   file-name (:name selected-node)
+                                                   dir (str "/" (str/join "/" (:dir-path selected-node)))
+                                                   full-name (str dir "/" file-name)
+                                                   msg (str (a/<! (git/status {:dir dir :filepath file-name}))
+                                                            ": " full-name)]
+                                               (println msg)))}]])
 
 (defn context-menu [context-menu-state]
   (into [:div {:class "vertical-menu"

@@ -40,7 +40,10 @@
 
 (defn status [params]
   (a/go
-    (a/<! (await (js/git.status (clj->js params))))))
+    (let [[err status-code] (a/<! (await (js/git.status (clj->js params))))]
+      (if err
+        err
+        status-code))))
 
 (defn status-matrix [params]
   (a/go
