@@ -3,18 +3,20 @@
   (:require [clojure.core.async :as a :include-macros true]
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
-            [stigmergy.cdr.util :as util]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            
+            [stigmergy.tily.js :as util]
+            [stigmergy.cdr.fs :as fs]))
 
 (defn clone [{:keys [url dir]}]
   (a/go
     (a/<! (await (js/window.pfs.mkdir dir)))
-    (a/<! (await (js/git.clone #js{:dir dir
-                                   :corsProxy "https://cors.isomorphic-git.org"
-                                   :url url
-                                   :ref "master"
-                                   :singleBranch true
-                                   :depth 10})))))
+    (a/<! (await (js/git.clone (clj->js {:dir dir
+                                         :corsProxy "https://cors.isomorphic-git.org"
+                                         :url url
+                                         :ref "master"
+                                         :singleBranch true
+                                         :depth 10}))))))
 
 (defn checkout [{:keys [url dir branch]}]
   (a/go
@@ -27,8 +29,8 @@
   (a/go
     (let [[_ dir & other] (str/split file "/")
           filepath (str/join "/" other)]
-      (a/<! (await (js/git.remove #js{:dir dir
-                                      :filepath filepath})))
+      (a/<! (await (js/git.remove (clj->js {:dir dir
+                                            :filepath filepath}))))
       (log/info "git rm " file))))
 
 (defn listFiles [params]
@@ -38,13 +40,23 @@
 
 (defn status [params]
   (a/go
-    (a/<! (await (js/git.status (clj->js params)))))
-  )
+    (a/<! (await (js/git.status (clj->js params))))))
+
+(defn status-matrix [params]
+  (a/go
+    (let [[err status] (a/<! (await (js/git.statusMatrix (clj->js params))))]
+      (if err
+        err
+        (mapv vec status)))))
 
 (comment
+  (fs/write-file "/cdr/project.clj" (util/str->array-buffer "hello world3"))
+  
   (a/go
     (prn (a/<! (status {:dir "/cdr" :filepath "project.clj"}))))
-  
+
+  (a/go
+    (prn (a/<! (status-matrix {:dir "/cdr" :pattern "*"}))))
   (a/go
     (prn (a/<! (listFiles {:dir "/cdr" :ref "HEAD"}))))
 
