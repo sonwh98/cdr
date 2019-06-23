@@ -28,10 +28,13 @@
 (defn rm [file]
   (a/go
     (let [[_ dir & other] (str/split file "/")
-          filepath (str/join "/" other)]
-      (a/<! (await (js/git.remove (clj->js {:dir dir
-                                            :filepath filepath}))))
-      (log/info "git rm " file))))
+          dir (str "/" dir)
+          filepath (str/join "/" other)
+          [err result] (a/<! (await (js/git.remove (clj->js {:dir dir
+                                                             :filepath filepath}))))]
+      (if err
+        err
+        result))))
 
 (defn listFiles [params]
   (a/go
@@ -66,7 +69,8 @@
   (a/go
     (prn (a/<! (listFiles {:dir "/cdr"}))))
   
-  (rm "/cdr/project.clj")
+  (a/go
+    (js/console.log (a/<! (rm "/cdr/hello.clj"))))
   
   (clone {:url "https://github.com/sonwh98/cdr.git"
           :dir "/cdr" })

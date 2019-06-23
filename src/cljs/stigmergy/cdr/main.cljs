@@ -129,7 +129,13 @@
                     [menu-item {:label "rename"}]
                     [menu-item {:label "reset"}]
                     [menu-item {:label "rm"
-                                :on-click #(js/alert "rm")}]
+                                :on-click #(a/go
+                                             (let [selected-node (-> @state/app-state :selected-node)
+                                                   file-name (:name selected-node)
+                                                   dir (str "/" (str/join "/" (:dir-path selected-node)))
+                                                   full-file-name (str dir "/" file-name)]
+                                               (prn "git rm " full-file-name
+                                                    " status= " (a/<! (git/rm full-file-name)))))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go
                                              (let [selected-node (-> @state/app-state :selected-node)
