@@ -31,9 +31,28 @@
                                       :filepath filepath})))
       (log/info "git rm " file))))
 
+(defn listFiles [params]
+  (a/go
+    (let [ [err files] (a/<! (await (js/git.listFiles (clj->js params))))]
+      (seq files))))
+
+(defn status [params]
+  (a/go
+    (a/<! (await (js/git.status (clj->js params)))))
+  )
+
 (comment
+  (a/go
+    (prn (a/<! (status {:dir "/cdr" :filepath "project.clj"}))))
   
-  (rm "/cdr/project.clj222")
+  (a/go
+    (prn (a/<! (listFiles {:dir "/cdr" :ref "HEAD"}))))
+
+  (a/go
+    (prn (a/<! (listFiles {:dir "/cdr"}))))
+  
+  (rm "/cdr/project.clj")
+  
   (clone {:url "https://github.com/sonwh98/cdr.git"
           :dir "/cdr" })
 
