@@ -1,8 +1,10 @@
 (ns stigmergy.cdr.git
   (:refer-clojure :exclude [clone])
   (:require [clojure.core.async :as a :include-macros true]
+            [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
-            [stigmergy.cdr.util :as util]))
+            [stigmergy.cdr.util :as util]
+            [clojure.string :as str]))
 
 (defn clone [{:keys [url dir]}]
   (a/go
@@ -21,7 +23,17 @@
                                       :corsProxy "https://cors.isomorphic-git.org"
                                       :ref branch})))))
 
+(defn rm [file]
+  (a/go
+    (let [[_ dir & other] (str/split file "/")
+          filepath (str/join "/" other)]
+      (a/<! (await (js/git.remove #js{:dir dir
+                                      :filepath filepath})))
+      (log/info "git rm " file))))
+
 (comment
+  
+  (rm "/cdr/project.clj222")
   (clone {:url "https://github.com/sonwh98/cdr.git"
           :dir "/cdr" })
 
