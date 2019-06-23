@@ -27,6 +27,23 @@
         err
         (seq files)))))
 
+(defn write-file [filepath data]
+  (a/go
+    (a/<! (await (js/window.pfs.writeFile filepath data)))))
+
+(defn read-file [filepath]
+  (a/go
+    (let [[err data] (a/<! (await (js/window.pfs.readFile filepath)))]
+      (if err
+        err
+        data))))
+
+(comment
+  (write-file "/cdr/hello.clj" (util/str->array-buffer "hello world3"))
+  (a/go
+    (prn "r=" (util/array-buffer->str (a/<! (read-file "/cdr/hello.clj")))))
+  
+  )
 (defn- map-value->vector [m]
   (let [k (-> m keys first)
         v (m k)]
