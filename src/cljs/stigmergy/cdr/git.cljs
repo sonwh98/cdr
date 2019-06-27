@@ -4,6 +4,7 @@
             [taoensso.timbre :as log :include-macros true]
             [cljs-await.core :refer [await]]
             [clojure.string :as str]
+            [clojure.pprint :as pp]
             
             [stigmergy.tily.js :as util]
             [stigmergy.cdr.fs :as fs]))
@@ -33,8 +34,13 @@
           [err result] (a/<! (await (js/git.remove (clj->js {:dir dir
                                                              :filepath filepath}))))]
       (if err
-        err
-        result))))
+        (do
+          (log/error err)
+          err)
+        (do
+          (log/info "git rm " filepath
+                    " result= " result)
+          result)))))
 
 (defn listFiles [params]
   (a/go
@@ -43,6 +49,7 @@
 
 (defn status [params]
   (a/go
+    
     (let [[err status-code] (a/<! (await (js/git.status (clj->js params))))]
       (if err
         err
@@ -75,13 +82,15 @@
   (fs/write-file "/cdr/project.clj" (util/str->array-buffer "hello world3"))
 
   (a/go
-    (prn (first (a/<! (log "/cdr")))))
+    (pp/pprint (a/<! (log "/tweenie"))))
   
   (a/go
-    (prn (a/<! (commit "/cdr" "foo")))    )
+    (prn (a/<! (commit "/tweenie" "deleted project.clj and README.md"))))
   
   (a/go
-    (prn (a/<! (status {:dir "/cdr" }))))
+    (prn (a/<! (status {:dir "/tweenie" :filepath "project.clj"})))
+    (prn (a/<! (status {:dir "/tweenie" :filepath "README.md"})))
+    )
 
   (a/go
     (prn (a/<! (status-matrix {:dir "/cdr" :pattern "*"}))))
@@ -91,8 +100,11 @@
   (a/go
     (prn (a/<! (listFiles {:dir "/cdr"}))))
   
-  (a/go
-    (js/console.log (a/<! (rm "/cdr/hello.clj"))))
+  (a/go (let [files ["/tweenie/project.clj" "/tweenie/src/com/kaicode/tweenie.cljs"]]
+          (doseq [file files]
+            (prn (a/<! (rm file)))
+            (prn (a/<! (fs/rm file)))))
+        )
   
   (clone {:url "https://github.com/sonwh98/cdr.git"
           :dir "/cdr" })

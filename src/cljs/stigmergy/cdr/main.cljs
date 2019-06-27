@@ -7,7 +7,8 @@
             [com.kaicode.wocket.client :as ws :refer [process-msg]]
             
             [clojure.string :as str]
-
+            [clojure.pprint :as pp]
+            
             [stigmergy.tily.js :as util]
             [stigmergy.eve :as eve]
 
@@ -111,13 +112,21 @@
         "clone"]])))
 
 (def git-top-menu [[menu-label {:label "Git"}]
-                   [menu-item {:label "clone"
-                               :on-click #(show-dialog clone-ui)}]
-                   [menu-item {:label "checkout"
-                               :on-click #(show-dialog clone-ui)}]
                    [menu-item {:label "branch"
                                :on-click #(show-dialog [:h1 "branch"])}]
+                   [menu-item {:label "checkout"
+                               :on-click #(show-dialog clone-ui)}]
+                   [menu-item {:label "clone"
+                               :on-click #(show-dialog clone-ui)}]
                    [menu-item {:label "commit"}]
+                   [menu-item {:label "log"
+                               :on-click #(a/go (let [selected-node (-> @state/app-state :selected-node)
+                                                      ;;[err result] (git/log)
+                                                      ]
+                                                  (a/go
+                                                    (pp/pprint (first (a/<! (git/log "/scramblies")))))
+
+                                                  ))}]
                    [menu-item {:label "pull"}]
                    [menu-item {:label "push"}]
                    [menu-item {:label "reset"}]])
@@ -134,8 +143,10 @@
                                                    file-name (:name selected-node)
                                                    dir (str "/" (str/join "/" (:dir-path selected-node)))
                                                    full-file-name (str dir "/" file-name)]
-                                               (prn "git rm " full-file-name
-                                                    " status= " (a/<! (git/rm full-file-name)))))}]
+                                               (a/<! (git/rm full-file-name))
+                                               (a/<! (fs/rm full-file-name))
+                                               
+                                               ))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go
                                              (let [selected-node (-> @state/app-state :selected-node)
@@ -297,7 +308,7 @@
                                     :on-click #(hide-context-menu)}
 
                               (for [[project-name {:keys [src-tree]}] @projects-state
-                                    :when (-> src-tree nil? not)
+                                    :when (-> src-tree empty? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]
                                 ^{:key project-name} [dir/tree {:node st :on-click open-file
                                                                 :on-context-menu show-file-options}])

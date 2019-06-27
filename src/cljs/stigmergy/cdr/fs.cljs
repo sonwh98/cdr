@@ -4,8 +4,9 @@
             [clojure.data :as d]
             [clojure.core.async :as a :include-macros true]
             [cljs-await.core :refer [await]]
+            [stigmergy.tily :as utily]
             [stigmergy.tily.js :as util]
-            ))
+            [taoensso.timbre :as log :include-macros true]))
 
 (defn walk-dir [{:keys [dir on-file] :as params}]
   (a/go
@@ -38,10 +39,27 @@
         err
         data))))
 
+(defn file? [f-or-d]
+  (utily/some-in? :name (keys f-or-d)))
+
+(defn dir? [f-or-d]
+  (and (= 1 (count f-or-d))
+       (-> f-or-d ffirst string?)))
+
+(defn rm [file-path]
+  (a/go
+    (log/info "rm " file-path)
+    (js/window.pfs.unlink file-path)
+    )
+  )
+
 (comment
+  (file {:name 1})
   (write-file "/cdr/hello.clj" (util/str->array-buffer "hello world3"))
   (a/go
     (prn "r=" (util/array-buffer->str (a/<! (read-file "/cdr/hello.clj")))))
+  (file? {"cdr" [1 2 3]})
+  (dir? {:name "foo"})
   
   )
 (defn- map-value->vector [m]
