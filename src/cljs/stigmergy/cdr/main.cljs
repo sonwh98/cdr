@@ -145,7 +145,7 @@
                                                    full-file-name (str dir "/" file-name)]
                                                (a/<! (git/rm full-file-name))
                                                (a/<! (fs/rm full-file-name))
-                                               
+                                               (dir/rm selected-node)
                                                ))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go

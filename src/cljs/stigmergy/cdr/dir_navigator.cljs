@@ -55,4 +55,28 @@
                 :overflow :auto
                 :margin 0
                 :padding 0}}
-   [dir args]])
+   [dir args]
+   ])
+
+(defn rm-nil [v]
+  (clojure.walk/prewalk (fn [a]
+                          (if (vector? a)
+                            (vec (remove nil? a))
+                            a))
+                        v))
+
+(defn rm [node]
+  (let [project (-> node :dir-path first)]
+    (swap! state/app-state update-in [:projects project :src-tree project]
+           (fn [n]
+             (vec (tily/remove-nils (clojure.walk/prewalk (fn [a]
+                                                            (if (= a node)
+                                                              nil
+                                                              a))
+                                                          n)))))))
+
+(comment
+  (get-in @app-state [:projects "tweenie" :src-tree "tweenie"  1])
+  (get-in @app-state [:projects "tweenie" :src-tree "tweenie" ])
+  (get-in @app-state [:projects "lightning-fs" :src-tree "lightning-fs" ])
+  )
