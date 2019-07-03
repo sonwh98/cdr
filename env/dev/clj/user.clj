@@ -52,7 +52,13 @@
     (->node-helper paths paths {}))
   
   (defn join-node [a b]
-    
+    (into {} (for [ [ak av] a
+                   :let [bv (b ak)]]
+               (cond
+                 (sequential? av) [ak (conj av bv)]
+                 (nil? bv) [ak av]
+                 :else [ak (conj [av] bv)])
+               ))
     )
   
   (let [path (-> "/foo" ->path )]
@@ -60,6 +66,7 @@
     )
 
 
+  (join-node {:a 1 :b 3} {:a 2 :c 10})
   
   (let [path (-> (files 0)
                  ->path)
