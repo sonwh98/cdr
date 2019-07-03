@@ -50,16 +50,32 @@
 
   (defn ->node [paths]
     (->node-helper paths paths {}))
+  (clojure.set/intersection #{1 2} #{2 3})
   
   (defn join-node [a b]
-    (into {} (for [ [ak av] a
-                   :let [bv (b ak)]]
-               (cond
-                 (sequential? av) [ak (conj av bv)]
-                 (nil? bv) [ak av]
-                 :else [ak (conj [av] bv)])
-               ))
+    (let [a-keys (keys a)
+          b-keys (keys b)
+          common-keys (clojure.set/intersection (set a-keys) (set b-keys))
+          ab (merge a b)
+          ab2 (into {} (for [ck common-keys
+                             :let [av (a ck)
+                                   bv (b ck)]]
+                         (cond
+                           (sequential? av) [ck (conj av bv)]
+                           :else [ck (conj [av] bv)])
+                         ))]
+      (merge ab ab2)
+      )
+    #_(into {} (for [ [ak av] a
+                     :let [bv (b ak)]]
+                 (cond
+                   (sequential? av) [ak (conj av bv)]
+                   (nil? bv) [ak av]
+                   :else [ak (conj [av] bv)])
+                 ))
     )
+
+  (join-node {:a 1} {:a 2 :b 3} )
   
   (let [path (-> "/foo" ->path )]
     (->node path)
