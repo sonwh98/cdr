@@ -59,23 +59,23 @@
           ab (merge a b)
           ab2 (into {} (for [ck common-keys
                              :let [av (a ck)
-                                   bv (b ck)]]
+                                   bv (b ck)]
+                             :when (not= av bv)]
                          (cond
-                           (sequential? av) [ck (conj av bv)]
+                           (and (map? av) (map? bv)) [ck (join-node av bv)]
+                           (and (sequential? av)
+                                (sequential? bv)) (let [av-bv (into av bv)
+                                                        node2 (reduce join-node
+                                                                      av-bv)]
+                                                    [ck [node2]]
+                                                    )
+                           ;; (sequential? av) [ck (into av bv)]
+                           
                            :else [ck (conj [av] bv)])
                          ))]
-      (merge ab ab2)
-      )
-    #_(into {} (for [ [ak av] a
-                     :let [bv (b ak)]]
-                 (cond
-                   (sequential? av) [ak (conj av bv)]
-                   (nil? bv) [ak av]
-                   :else [ak (conj [av] bv)])
-                 ))
-    )
+      (merge ab ab2)))
 
-  (join-node {:a 1} {:a 2 :b 3} )
+  (join-node {:a 1 :b {:src [1 2]} :d 10} {:a 2 :b {:src [3]} :c 1} )
   
   (let [path (-> "/foo" ->path )]
     (->node path)
@@ -83,12 +83,31 @@
 
 
   (join-node {:a 1 :b 3} {:a 2 :c 10})
-  
-  (let [path (-> (files 0)
-                 ->path)
-        node (->node path) ]
-    node
+
+  (let [nodes (mapv #(-> % ->path ->node)
+                    files)]
+    nodes
     )
 
+  (def a {"scramblies"
+          [{"src"
+            [{"clj"
+              [{:file/name "core.clj", :parent ["scramblies" "src" "clj"]}],
+              :parent ["scramblies" "src"]}],
+            :parent ["scramblies"]}]})
+
+  [{:file/name "core.clj" :parent ["scramblies" "src" "clj"]}
+   {:file/name "server.clj" :parent ["scramblies" "src" "clj"]}]
+
+  
+  (def b {"scramblies"
+          [{"src"
+            [{"clj"
+              [{:file/name "server.clj",
+                :parent ["scramblies" "src" "clj"]}],
+              :parent ["scramblies" "src"]}],
+            :parent ["scramblies"]}]})
+
+  (join-node a b)
   
   )
