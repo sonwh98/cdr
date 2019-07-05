@@ -65,14 +65,13 @@
                            (and (map? av) (map? bv)) [ck (join-node av bv)]
                            (and (sequential? av)
                                 (sequential? bv)) (let [av-bv (into av bv)
-                                                        node2 (reduce join-node
-                                                                      av-bv)]
-                                                    [ck [node2]]
-                                                    )
-                           ;; (sequential? av) [ck (into av bv)]
-                           
-                           :else [ck (conj [av] bv)])
-                         ))]
+                                                        files? (some #(contains? % :file/name)
+                                                                     av-bv)]
+                                                    (if files?
+                                                      [ck av-bv]
+                                                      [ck [(reduce join-node
+                                                                   av-bv)]]))
+                           :else [ck (conj [av] bv)])))]
       (merge ab ab2)))
 
   (join-node {:a 1 :b {:src [1 2]} :d 10} {:a 2 :b {:src [3]} :c 1} )
@@ -109,5 +108,10 @@
             :parent ["scramblies"]}]})
 
   (join-node a b)
+
+  (some #(contains? % :file/name2)
+        
+        [{:file/name2 "core.clj", :parent ["scramblies" "src" "clj"]}
+         {:file/name2 "server.clj", :parent ["scramblies" "src" "clj"]}])
   
   )
