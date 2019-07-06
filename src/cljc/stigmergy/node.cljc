@@ -1,6 +1,13 @@
 (ns stigmergy.node
   (:require [stigmergy.tily :as tily]))
 
+(defn dir? [f-or-d]
+  (and (= 1 (count f-or-d))
+       (-> f-or-d ffirst string?)))
+
+(defn file? [f-or-d]
+  (tily/some-in? :file/name (keys f-or-d)))
+
 (defn ->path [f]
   (-> f (clojure.string/split #"/") rest vec))
 
@@ -31,84 +38,77 @@
 (clojure.set/intersection #{1 2} #{2 3})
 
 (defn join-node [a b]
+  (prn "a=" a)
+  (prn "b=" b)
   (let [a-keys (keys a)
         b-keys (keys b)
         common-keys (clojure.set/intersection (set a-keys) (set b-keys))
-        ab (merge a b)
-        ab2 (into {} (for [ck common-keys
-                           :let [av (a ck)
-                                 bv (b ck)]
-                           :when (not= av bv)]
-                       (cond
-                         (and (map? av) (map? bv)) [ck (join-node av bv)]
-                         (and (sequential? av)
-                              (sequential? bv)) (let [av-bv (into av bv)
-                                                      _ (prn "av-bv=" av-bv)
-                                                      files? (some (fn [e]
-                                                                     (try
-                                                                       (contains? e :file/name)
-                                                                       (catch Exception ex
-                                                                         (prn "e=" e)))
-
-                                                                     )
+        common-keys (disj common-keys :parent)]
+    (prn "common-keys=" common-keys)
+    (if (empty? common-keys)
+      [a b]
+      (let [ab (merge a b)
+            ab2 (into {} (for [ck common-keys
+                               :let [av (a ck)
+                                     bv (b ck)]
+                               :when (not= av bv)]
+                           (cond
+                             (and (map? av) (map? bv)) [ck (join-node av bv)]
+                             (and (sequential? av)
+                                  (sequential? bv)) (let [av-bv (into av bv)]
+                                                      (prn "av-bv=" av-bv)
+                                                      [ck  (reduce join-node
                                                                    av-bv)]
-                                                  (if files?
-                                                    [ck av-bv]
-                                                    [ck [(reduce join-node
-                                                                 av-bv)]]))
-                         :else [ck (conj [av] bv)])))]
-    (merge ab ab2)))
+                                                      )
+                             :else [ck (conj [av] bv)])))]
+        (merge ab ab2)))))
 
 (comment
-  (def nodes [{"scramblies"
-               [{"resources"
-                 [{"public"
-                   [{:file/name "index.html",
-                     :parent ["scramblies" "resources" "public"]}],
-                   :parent ["scramblies" "resources"]}],
-                 :parent ["scramblies"]}]}
-              {"scramblies"
-               [{"src"
-                 [{"clj"
-                   [{"scramblies"
-                     [{:file/name "core.clj",
-                       :parent ["scramblies" "src" "clj" "scramblies"]}],
-                     :parent ["src" "clj"]}],
-                   :parent ["src"]}]}]}
-              {"scramblies"
-               [{"src"
-                 [{"clj"
-                   [{"scramblies"
-                     [{:file/name "server.clj",
-                       :parent ["scramblies" "src" "clj" "scramblies"]}],
-                     :parent ["src" "clj"]}],
-                   :parent ["src"]}]}]}
-              {"scramblies"
-               [{"src"
-                 [{"clj"
-                   [{:file/name "user.clj",
-                     :parent ["scramblies" "src" "clj"]}],
-                   :parent ["scramblies" "src"]}],
-                 :parent ["scramblies"]}]}
-              {"scramblies"
-               [{"src"
-                 [{"cljs"
-                   [{"scramblies"
-                     [{:file/name "core.cljs",
-                       :parent ["scramblies" "src" "cljs" "scramblies"]}],
-                     :parent ["src" "cljs"]}],
-                   :parent ["src"]}]}]}
-              {"scramblies"
-               [{"test"
-                 [{"scramblies"
-                   [{:file/name "tests.clj",
-                     :parent ["scramblies" "test" "scramblies"]}],
-                   :parent ["test"]}]}]}
-              {"scramblies" [{:file/name "README.md", :parent ["scramblies"]}],
-               :parent []}
-              {"scramblies"
-               [{:file/name "project.clj", :parent ["scramblies"]}],
-               :parent []}])
+  (def nodes [{"scramblies" [{"resources" [{"public" [{:file/name "index.html"
+                                                       :parent ["scramblies" "resources" "public"]}]
+                                            :parent ["scramblies" "resources"]}]
+                              :parent ["scramblies"]}]}
+              {"scramblies" [{"src" [{"clj" [{"scramblies" [{:file/name "core.clj"
+                                                             :parent ["scramblies" "src" "clj" "scramblies"]}]
+                                              :parent ["src" "clj"]}]
+                                      :parent ["src"]}]
+                              :parent ["scramblies"]
+                              }]}
+              #_{"scramblies"
+                 [{"src"
+                   [{"clj"
+                     [{"scramblies"
+                       [{:file/name "server.clj"
+                         :parent ["scramblies" "src" "clj" "scramblies"]}]
+                       :parent ["src" "clj"]}]
+                     :parent ["src"]}]}]}
+              #_{"scramblies"
+                 [{"src"
+                   [{"clj"
+                     [{:file/name "user.clj"
+                       :parent ["scramblies" "src" "clj"]}]
+                     :parent ["scramblies" "src"]}]
+                   :parent ["scramblies"]}]}
+              ])
   
   (reduce join-node nodes)
+
+  {"scramblies" [{"resources" [{"public"
+                                [{:file/name "index.html"
+                                  :parent ["scramblies" "resources" "public"]}]
+                                :parent ["scramblies" "resources"]}]
+                  :parent ["scramblies"]}
+                 {"src" [{"clj" [{"scramblies" [{:file/name "core.clj"
+                                                 :parent ["scramblies" "src" "clj" "scramblies"]}]
+                                  :parent ["src" "clj"]}]
+                          :parent ["src"]}]}]}
+
+  {"src"
+   [{"clj"
+     [{"scramblies"
+       [{:file/name "core.clj",
+         :parent ["scramblies" "src" "clj" "scramblies"]}],
+       :parent ["src" "clj"]}],
+     :parent ["src"]}]}
+
   )
