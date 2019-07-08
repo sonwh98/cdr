@@ -96,58 +96,19 @@
                                       :parent ["scrambles" "src"]}]
                               :parent ["scramblies"]
                               }]}
-              #_{"scramblies" [{"src" [{"clj" [{"scramblies" [{:file/name "server.clj"
-                                                               :parent ["scramblies" "src" "clj" "scramblies"]}]
-                                                :parent ["scramblies" "src" "clj"]}]
-                                        :parent ["scramblies" "src"]}]}]}
-              #_{"scramblies"
-                 [{"src"
-                   [{"clj"
-                     [{:file/name "user.clj"
-                       :parent ["scramblies" "src" "clj"]}]
-                     :parent ["scramblies" "src"]}]
-                   :parent ["scramblies"]}]}
+              {"scramblies" [{"src" [{"clj" [{"scramblies" [{:file/name "server.clj"
+                                                             :parent ["scramblies" "src" "clj" "scramblies"]}]
+                                              :parent ["scramblies" "src" "clj"]}]
+                                      :parent ["scramblies" "src"]}]}]}
+              {"scramblies"
+               [{"src"
+                 [{"clj"
+                   [{:file/name "user.clj"
+                     :parent ["scramblies" "src" "clj"]}]
+                   :parent ["scramblies" "src"]}]
+                 :parent ["scramblies"]}]}
               ])
   
   (reduce join-node nodes)
 
-  (def x {"scramblies"
-          [{"resources"
-            [{"public"
-              [{:file/name "index.html",
-                :parent ["scramblies" "resources" "public"]}],
-              :parent ["scramblies" "resources"]}],
-            :parent ["scramblies"]}
-           {"src"
-            [{"clj"
-              [{"scramblies"
-                [{:file/name "core.clj",
-                  :parent ["scramblies" "src" "clj" "scramblies"]}],
-                :parent ["src" "clj"]}],
-              :parent ["src"]}],
-            :parent ["scramblies"]}]})
-
-  (def y {"scramblies" [{"src" [{"clj" [{"scramblies" [{:file/name "server.clj"
-                                                        :parent ["scramblies" "src" "clj" "scramblies"]}]
-                                         :parent ["scramblies" "src" "clj"]}]
-                                 :parent ["scramblies" "src"]}]}]})
-
-  (join-node x y)
-
-  
-  {"scramblies"
-   [{"resources"
-     [{"public"
-       [{:file/name "index.html",
-         :parent ["scramblies" "resources" "public"]}],
-       :parent ["scramblies" "resources"]}],
-     :parent ["scramblies"]}
-    {"src"
-     {"clj"
-      {"scramblies"
-       {:file/name ["core.clj" "server.clj"],
-        :parent ["scramblies" "src" "clj" "scramblies"]},
-       :parent ["scramblies" "src" "clj"]},
-      :parent ["scramblies" "src"]},
-     :parent ["scramblies"]}]}
   )
