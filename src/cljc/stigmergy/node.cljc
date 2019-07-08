@@ -52,6 +52,8 @@
           c (a i)
           d (join-node c b)]
       (prn "k=" k " i=" i)
+      (prn "c=" c)
+      (prn "d=" d)
       (-> (tily/drop-nth a i)
           (tily/insert-at i d)))
     (let [a-keys (keys a)
@@ -72,10 +74,13 @@
                                    (cond
                                      (and (map? av) (map? bv)) [ck (join-node av bv)]
                                      (and (sequential? av)
-                                          (sequential? bv)) (let [av-bv (into av bv)]
+                                          (sequential? bv)) (let [av-bv (into av bv)
+                                                                  joined (reduce join-node
+                                                                                 av-bv)]
                                                               (prn "av-bv=" av-bv)
-                                                              [ck  (reduce join-node
-                                                                           av-bv)]
+                                                              (if (sequential? joined)
+                                                                [ck  joined]
+                                                                [ck [joined]])
                                                               )
                                      :else [ck (conj [av] bv)])))]
                 (merge ab ab2))))))
