@@ -47,16 +47,18 @@
   (prn "a=" a)
   (prn "b=" b)
   (cond
-    (and (sequential? a) (map? b)) (let [k (-> b (dissoc :parent) ffirst)
+    (and (sequential? a) (map? b)) (let [k (-> b (dissoc :parent :file/name) ffirst)
                                          i (index-of a k)]
                                      (prn "k=" k " i=" i)
                                      (if i
                                        (let [c (a i)
-                                             d (join-node c b)]
+                                             d (join-node c b)
+                                             e (-> (tily/drop-nth a i)
+                                                   (tily/insert-at i d))]
                                          (prn "c=" c)
                                          (prn "d=" d)
-                                         (-> (tily/drop-nth a i)
-                                             (tily/insert-at i d)))
+                                         (prn "e=" e)
+                                         e)
                                        (let [r (into a [b])]
                                          (prn "a2=" a)
                                          (prn "b2=" b)
@@ -167,4 +169,36 @@
   
   (reduce join-node nodes)
 
+  {"scramblies"
+   [{"resources"
+     [{"public"
+       [{:file/name "index.html",
+         :parent ["scramblies" "resources" "public"]}],
+       :parent ["scramblies" "resources"]}],
+     :parent ["scramblies"]}
+    {"src"
+     [{"clj"
+       [{"scramblies"
+         [{:file/name "core.clj",
+           :parent ["scramblies" "src" "clj" "scramblies"]}
+          {:file/name "server.clj",
+           :parent ["scramblies" "src" "clj" "scramblies"]}],
+         :parent ["src" "clj"]}
+        {:file/name "user.clj", :parent ["scramblies" "src" "clj"]}],
+       :parent ["scramblies" "src"]}
+      {"cljs"
+       [{"scramblies"
+         [{:file/name "core.cljs",
+           :parent ["scramblies" "src" "cljs" "scramblies"]}],
+         :parent ["src" "cljs"]}],
+       :parent ["src"]}],
+     :parent ["scramblies"]}
+    {"test"
+     [{"scramblies"
+       [{:file/name "tests.clj",
+         :parent ["scramblies" "test" "scramblies"]}],
+       :parent ["test"]}]}
+    {:file/name "README.md", :parent ["scramblies"]}
+    {:file/name "project.clj", :parent ["scramblies"]}],
+   :parent []}
   )
