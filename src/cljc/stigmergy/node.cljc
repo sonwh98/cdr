@@ -108,6 +108,54 @@
                    :parent ["scramblies" "src"]}]
                  :parent ["scramblies"]}]}
               ])
+  (def nodes
+    [{"scramblies"
+      [{"resources"
+        [{"public"
+          [{:file/name "index.html",
+            :parent ["scramblies" "resources" "public"]}],
+          :parent ["scramblies" "resources"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"src"
+        [{"clj"
+          [{"scramblies"
+            [{:file/name "core.clj",
+              :parent ["scramblies" "src" "clj" "scramblies"]}],
+            :parent ["src" "clj"]}],
+          :parent ["src"]}]}]}
+     {"scramblies"
+      [{"src"
+        [{"clj"
+          [{"scramblies"
+            [{:file/name "server.clj",
+              :parent ["scramblies" "src" "clj" "scramblies"]}],
+            :parent ["src" "clj"]}],
+          :parent ["src"]}]}]}
+     {"scramblies"
+      [{"src"
+        [{"clj"
+          [{:file/name "user.clj", :parent ["scramblies" "src" "clj"]}],
+          :parent ["scramblies" "src"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"src"
+        [{"cljs"
+          [{"scramblies"
+            [{:file/name "core.cljs",
+              :parent ["scramblies" "src" "cljs" "scramblies"]}],
+            :parent ["src" "cljs"]}],
+          :parent ["src"]}]}]}
+     {"scramblies"
+      [{"test"
+        [{"scramblies"
+          [{:file/name "tests.clj",
+            :parent ["scramblies" "test" "scramblies"]}],
+          :parent ["test"]}]}]}
+     #_{"scramblies" [{:file/name "README.md", :parent ["scramblies"]}],
+        :parent []}
+     #_{"scramblies" [{:file/name "project.clj", :parent ["scramblies"]}],
+        :parent []}])
   
   (reduce join-node nodes)
 
