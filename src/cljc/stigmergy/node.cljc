@@ -48,14 +48,21 @@
   (prn "b=" b)
   (if (and (sequential? a) (map? b))
     (let [k (-> b (dissoc :parent) ffirst)
-          i (index-of a k)
-          c (a i)
-          d (join-node c b)]
+          i (index-of a k)]
       (prn "k=" k " i=" i)
-      (prn "c=" c)
-      (prn "d=" d)
-      (-> (tily/drop-nth a i)
-          (tily/insert-at i d)))
+      (if i
+        (let [c (a i)
+              d (join-node c b)]
+          (prn "c=" c)
+          (prn "d=" d)
+          (-> (tily/drop-nth a i)
+              (tily/insert-at i d)))
+        (let [r (into a [b])]
+          (prn "a2=" a)
+          (prn "b2=" b)
+          (prn "r=" r)
+          r
+          )))
     (let [a-keys (keys a)
           b-keys (keys b)
           _ (prn "a-keys=" a-keys)
@@ -78,6 +85,7 @@
                                                                   joined (reduce join-node
                                                                                  av-bv)]
                                                               (prn "av-bv=" av-bv)
+                                                              (prn "joined=" joined)
                                                               (if (sequential? joined)
                                                                 [ck  joined]
                                                                 [ck [joined]])
@@ -152,10 +160,10 @@
           [{:file/name "tests.clj",
             :parent ["scramblies" "test" "scramblies"]}],
           :parent ["test"]}]}]}
-     #_{"scramblies" [{:file/name "README.md", :parent ["scramblies"]}],
-        :parent []}
-     #_{"scramblies" [{:file/name "project.clj", :parent ["scramblies"]}],
-        :parent []}])
+     {"scramblies" [{:file/name "README.md", :parent ["scramblies"]}],
+      :parent []}
+     {"scramblies" [{:file/name "project.clj", :parent ["scramblies"]}],
+      :parent []}])
   
   (reduce join-node nodes)
 
