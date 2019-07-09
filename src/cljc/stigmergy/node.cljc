@@ -46,52 +46,52 @@
 (defn join-node [a b]
   (prn "a=" a)
   (prn "b=" b)
-  (if (and (sequential? a) (map? b))
-    (let [k (-> b (dissoc :parent) ffirst)
-          i (index-of a k)]
-      (prn "k=" k " i=" i)
-      (if i
-        (let [c (a i)
-              d (join-node c b)]
-          (prn "c=" c)
-          (prn "d=" d)
-          (-> (tily/drop-nth a i)
-              (tily/insert-at i d)))
-        (let [r (into a [b])]
-          (prn "a2=" a)
-          (prn "b2=" b)
-          (prn "r=" r)
-          r
-          )))
-    (let [a-keys (keys a)
-          b-keys (keys b)
-          _ (prn "a-keys=" a-keys)
-          _ (prn "b-keys=" b-keys)
-          common-keys (clojure.set/intersection (set a-keys) (set b-keys))
-          common-keys (disj common-keys :parent :file/name)]
-      (prn "common-keys=" common-keys)
-      (cond
-        (empty? common-keys) [a b]
-
-        :else (let [ab (merge a b)
-                    ab2 (into {} (for [ck common-keys
-                                       :let [av (a ck)
-                                             bv (b ck)]
-                                       :when (not= av bv)]
-                                   (cond
-                                     (and (map? av) (map? bv)) [ck (join-node av bv)]
-                                     (and (sequential? av)
-                                          (sequential? bv)) (let [av-bv (into av bv)
-                                                                  joined (reduce join-node
-                                                                                 av-bv)]
-                                                              (prn "av-bv=" av-bv)
-                                                              (prn "joined=" joined)
-                                                              (if (sequential? joined)
-                                                                [ck  joined]
-                                                                [ck [joined]])
-                                                              )
-                                     :else [ck (conj [av] bv)])))]
-                (merge ab ab2))))))
+  (cond
+    (and (sequential? a) (map? b)) (let [k (-> b (dissoc :parent) ffirst)
+                                         i (index-of a k)]
+                                     (prn "k=" k " i=" i)
+                                     (if i
+                                       (let [c (a i)
+                                             d (join-node c b)]
+                                         (prn "c=" c)
+                                         (prn "d=" d)
+                                         (-> (tily/drop-nth a i)
+                                             (tily/insert-at i d)))
+                                       (let [r (into a [b])]
+                                         (prn "a2=" a)
+                                         (prn "b2=" b)
+                                         (prn "r=" r)
+                                         r
+                                         )))
+    (and (map? a) (map? b)) (let [a-keys (keys a)
+                                  b-keys (keys b)
+                                  _ (prn "a-keys=" a-keys)
+                                  _ (prn "b-keys=" b-keys)
+                                  common-keys (clojure.set/intersection (set a-keys) (set b-keys))
+                                  common-keys (disj common-keys :parent :file/name)]
+                              (prn "common-keys=" common-keys)
+                              (if (empty? common-keys)
+                                [a b]
+                                (let [ab (merge a b)
+                                      ab2 (into {} (for [ck common-keys
+                                                         :let [av (a ck)
+                                                               bv (b ck)]
+                                                         :when (not= av bv)]
+                                                     (cond
+                                                       (and (map? av) (map? bv)) [ck (join-node av bv)]
+                                                       (and (sequential? av)
+                                                            (sequential? bv)) (let [av-bv (into av bv)
+                                                                                    joined (reduce join-node
+                                                                                                   av-bv)]
+                                                                                (prn "av-bv=" av-bv)
+                                                                                (prn "joined=" joined)
+                                                                                (if (sequential? joined)
+                                                                                  [ck  joined]
+                                                                                  [ck [joined]])
+                                                                                )
+                                                       :else [ck (conj [av] bv)])))]
+                                  (merge ab ab2))))
+    :else (prn "error")))
 
 (comment
   (def nodes [{"scramblies" [{"resources" [{"public" [{:file/name "index.html"
