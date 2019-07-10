@@ -14,7 +14,7 @@
 (defn get-parent-path [full-path paths]
   (->> full-path (drop-last (count paths)) vec))
 
-(defn ->node-helper [full-path paths node ]
+(defn ->node-helper [full-path paths node]
   (prn "full-path=" full-path " paths=" paths)
   (prn "node=" node)
   (cond
@@ -25,7 +25,7 @@
                                                    :parent file-parent-path}])
                               parent-path (get-parent-path full-path paths)]
                           (prn "parent-path1=" parent-path)
-                          (prn "n="n)
+                          (prn "n=" n)
                           (if (empty? parent-path)
                             n
                             (assoc n :parent parent-path)))
@@ -39,7 +39,6 @@
               n
               (let [n2 (assoc n :parent parent-path)]
                 (prn "n2=" n2)
-
 
                 n2)))))
 
@@ -74,8 +73,7 @@
                                          ;; (prn "a2=" a)
                                          ;; (prn "b2=" b)
                                          ;; (prn "r=" r)
-                                         r
-                                         )))
+                                         r)))
     (and (map? a) (map? b)) (let [a-keys (keys a)
                                   b-keys (keys b)
                                   ;; _ (prn "a-keys=" a-keys)
@@ -100,8 +98,7 @@
                                                                                 ;; (prn "joined=" joined)
                                                                                 (if (sequential? joined)
                                                                                   [ck  joined]
-                                                                                  [ck [joined]])
-                                                                                )
+                                                                                  [ck [joined]]))
                                                        :else [ck (conj [av] bv)])))]
                                   (merge ab ab2))))
     :else (prn "error")))
@@ -111,8 +108,8 @@
 
   (-> "/scramblies/src/cljs/scramblies/core.cljs"
       ->path ->node)
-  
+
   (def nodes (mapv (fn [n]
-                     (-> n ->path ->node)
-                     ) files))
-  (reduce join-node nodes))
+                     (-> n ->path ->node)) files))
+  (reduce join-node nodes)
+  )
