@@ -16,6 +16,7 @@
             [stigmergy.cdr.core :as core]
             [stigmergy.cdr.mdc :as mdc]
             [stigmergy.cdr.fs :as fs]
+            [stigmergy.cdr.node :as n]
             [stigmergy.cdr.git :as git]
             [stigmergy.cdr.dir-navigator :as dir]))
 
@@ -139,13 +140,23 @@
                     [menu-item {:label "reset"}]
                     [menu-item {:label "rm"
                                 :on-click #(a/go
-                                             (let [selected-node (-> @state/app-state :selected-node)
-                                                   file-name (:name selected-node)
-                                                   dir (str "/" (str/join "/" (:dir-path selected-node)))
-                                                   full-file-name (str dir "/" file-name)]
-                                               (a/<! (git/rm full-file-name))
-                                               (a/<! (fs/rm full-file-name))
-                                               (dir/rm selected-node)
+                                             (when-let [selected-node (-> @state/app-state :selected-node)]
+                                               (if (n/file?  selected-node)
+                                                 (let [file-name (:name selected-node)
+                                                       dir (str "/" (str/join "/" (:dir-path selected-node)))
+                                                       full-file-name (str dir "/" file-name)]
+                                                   (a/<! (git/rm full-file-name))
+                                                   (a/<! (fs/rm full-file-name))
+                                                   (dir/rm selected-node))
+                                                 (let [dir (-> selected-node keys)
+                                                       dir-path (:dir-path selected-node)]
+                                                   (prn "dir=" dir)
+                                                   (prn "path=" dir-path)
+                                                   ;;(prn "selected-node=" selected-node)
+                                                   
+                                                   )
+                                                 )
+                                               
                                                ))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go
@@ -289,10 +300,13 @@
                              #_(.. el (addEventListener "longpress"
                                                         #(contextmenu-handler (get-code-mirror) %)))))
                          :reagent-render
-                         (fn [project-manager-state]
+                         (fn [project-manager-state projects-state]
                            (let [width (or (-> @project-manager-state :width)
                                            min-width)
-                                 projects-state (r/cursor state/app-state [:projects])]
+                                 ;;projects-state (r/cursor state/app-state [:projects])
+                                 ]
+                             (prn "project-manager2")
+                             
                              [:div {:style {:position :absolute
                                             :display (if (-> @project-manager-state :visible?)
                                                        :block
@@ -331,13 +345,13 @@
 (defn main-ui [state]
   (let [context-menu-state (r/cursor state [:context-menu])
         project-manager-state (r/cursor state [:project-manager])
+        projects-state (r/cursor state [:projects])
         dialog-state (r/cursor state [:dialog])]
-
     (fn [state]
 
       [:div
        [left-panel]
-       [project-manager project-manager-state]
+       [project-manager project-manager-state projects-state]
        (when (-> @context-menu-state :visible?)
          [context-menu context-menu-state])
        (when (-> @dialog-state :visible?)
@@ -357,3 +371,18 @@
 (defmethod process-msg :chat-broadcast [[_ msg]]
   (prn "from clj " msg)
   (swap! state/app-state assoc :repl-text msg))
+
+(comment
+  (def files ["/scramblies/resources/public/index.html" "/scramblies/src/clj/scramblies/core.clj" "/scramblies/src/clj/scramblies/server.clj" "/scramblies/src/clj/user.clj" "/scramblies/src/cljs/scramblies/core.cljs" "/scramblies/test/scramblies/tests.clj" "/scramblies/README.md" "/scramblies/project.clj"])
+
+  (def nodes (mapv (fn [n]
+                     (-> n n/->path n/->node)) files)) 
+  (def src-tree (reduce n/join-node nodes))
+
+  (swap! state/app-state assoc-in
+         [:projects "scramblies" :src-tree]
+         src-tree)
+  (-> @state/app-state :projects keys)
+
+  )
+

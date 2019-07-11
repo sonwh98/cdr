@@ -3,10 +3,13 @@
             [clojure.set :as s]
             [clojure.data :as d]
             [clojure.core.async :as a :include-macros true]
+            [cljs.pprint :as pp]
             [cljs-await.core :refer [await]]
+            [taoensso.timbre :as log :include-macros true]
+            
             [stigmergy.tily :as utily]
             [stigmergy.tily.js :as util]
-            [taoensso.timbre :as log :include-macros true]))
+            [stigmergy.cdr.node :as n]))
 
 (defn walk-dir [{:keys [dir on-file] :as params}]
   (a/go
@@ -39,110 +42,106 @@
         err
         data))))
 
-(defn file? [f-or-d]
-  (utily/some-in? :name (keys f-or-d)))
+;; (defn file? [f-or-d]
+;;   (utily/some-in? :name (keys f-or-d)))
 
-(defn dir? [f-or-d]
-  (and (= 1 (count f-or-d))
-       (-> f-or-d ffirst string?)))
+;; (defn dir? [f-or-d]
+;;   (and (= 1 (count f-or-d))
+;;        (-> f-or-d ffirst string?)))
 
 (defn rm [file-path]
   (a/go
     (log/info "rm " file-path)
-    (js/window.pfs.unlink file-path)
-    )
-  )
+    (js/window.pfs.unlink file-path)))
 
-(comment
-  (file {:name 1})
-  (write-file "/cdr/hello.clj" (util/str->array-buffer "hello world3"))
-  (a/go
-    (prn "r=" (util/array-buffer->str (a/<! (read-file "/cdr/hello.clj")))))
-  (file? {"cdr" [1 2 3]})
-  (dir? {:name "foo"})
-  
-  )
-(defn- map-value->vector [m]
-  (let [k (-> m keys first)
-        v (m k)]
-    (if (map? v)
-      {k [(map-value->vector v)]}
-      {k v})))
+#_(defn mk-tree
+    "builds a tree by parsing a the string structure of a file path"
+    [files]
+    (let [nodes (mapv #(-> % ->path ->node)
+                      files)]
+      (prn nodes)
+      #_(reduce join-node nodes)
+      ))
 
-(defn mk-node
-  ([dir-path files complete-path]
-   (let [files (mapv (fn [f]
-                       {:name f
-                        :dir-path (-> complete-path drop-last vec)})
-                     files)
-         tree (assoc-in {} dir-path files)]
-     (map-value->vector tree)))
-  ([file-path complete-path]
-   (let [file (last file-path)
-         dir-path (-> file-path drop-last vec)]
-     (mk-node dir-path [file] complete-path))))
-
-(defn attach [node paths complete-path]
-  (let [p (first paths)
-        remaining-paths (-> paths rest vec)]
-    (cond
-      (empty? node) (mk-node paths complete-path)
-      (map? node) (if (contains? node p)
-                    (let [sub-node (node p)
-                          sub-node (attach sub-node remaining-paths complete-path)]
-                      (if (vector? sub-node)
-                        (assoc node p sub-node)
-                        (assoc node p [sub-node])))
-                    (assoc node p [(mk-node complete-path complete-path)]))
-      (vector? node) (if (empty? remaining-paths)
-                       (conj node {:name p
-                                   :dir-path (-> complete-path drop-last vec)})
-                       (let [vector-of-nodes node
-                             found-node (->> vector-of-nodes
-                                             (filter #(contains? % p))
-                                             first)
-                             without-found-node (->> vector-of-nodes
-                                                     (remove #(contains? % p))
-                                                     vec)]
-                         (if found-node
-                           (let [sub-node (found-node p)
-                                 new-sub-node (attach sub-node remaining-paths complete-path)]
-                             (if (vector? new-sub-node)
-                               (conj without-found-node
-                                     (assoc found-node p
-                                            new-sub-node))
-                               (assoc found-node p
-                                      [new-sub-node])))
-                           (let [n (mk-node paths complete-path)]
-                             (conj node n)))))
-      :else node)))
-
-(defn mk-tree
-  "builds a tree by parsing a the string structure of a file path"
-  [files]
-  (let [paths (mapv (fn [f]
-                      (-> f (str/split #"/") rest vec))
-                    files)]
-    (reduce (fn [acc p]
-              (attach acc p p))
-            {}
-            paths)))
+(defn mk-node [file]
+  (-> file n/->path n/->node))
 
 (defn mk-dir-tree
   "builds a tree given the directory name"
   [dir]
+  (prn "dir=" dir)
   (a/go (let [files (atom [])]
           (a/<! (walk-dir {:dir dir
                            :on-file (fn [file]
                                       (when-not (re-find #".git" file)
                                         (swap! files conj file)))}))
-          (mk-tree @files))))
+          (prn "files=" @files)
+          (let [nodes (mapv mk-node
+                            @files)]
+            (prn "nodes=" nodes)
+            (reduce n/join-node nodes)))))
 
 (comment
-  (walk-dir {:dir "/"
-             :on-file (fn [file]
-                        (prn file))})
+  (def files ["/scramblies/resources/public/index.html" "/scramblies/src/clj/scramblies/core.clj" "/scramblies/src/clj/scramblies/server.clj" "/scramblies/src/clj/user.clj" "/scramblies/src/cljs/scramblies/core.cljs" "/scramblies/test/scramblies/tests.clj" "/scramblies/README.md" "/scramblies/project.clj"])
 
-  (a/go
-    (prn (a/<! (ls "/"))))
+  (def files [;;"/scramblies/resources/public/index.html"
+              "/scramblies/src/clj/scramblies/core.clj"
+              "/scramblies/src/clj/scramblies/server.clj"])
+  
+  (def t  (mk-tree files))
+
+  (def nodes
+    [{"scramblies"
+      [{"resources"
+        [{"public"
+          [{:file/name "index.html",
+            :parent ["scramblies" "resources" "public"]}],
+          :parent ["scramblies" "resources"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"src"
+        [{"clj"
+          [{"scramblies"
+            [{:file/name "core.clj",
+              :parent ["scramblies" "src" "clj" "scramblies"]}],
+            :parent ["scramblies" "src" "clj"]}],
+          :parent ["scramblies" "src"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"src"
+        [{"clj"
+          [{"scramblies"
+            [{:file/name "server.clj",
+              :parent ["scramblies" "src" "clj" "scramblies"]}],
+            :parent ["scramblies" "src" "clj"]}],
+          :parent ["scramblies" "src"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"src"
+        [{"clj"
+          [{:file/name "user.clj",
+            :parent ["scramblies" "src" "clj"]}],
+          :parent ["scramblies" "src"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"src"
+        [{"cljs"
+          [{"scramblies"
+            [{:file/name "core.cljs",
+              :parent ["scramblies" "src" "cljs" "scramblies"]}],
+            :parent ["scramblies" "src" "cljs"]}],
+          :parent ["scramblies" "src"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies"
+      [{"test"
+        [{"scramblies"
+          [{:file/name "tests.clj",
+            :parent ["scramblies" "test" "scramblies"]}],
+          :parent ["scramblies" "test"]}],
+        :parent ["scramblies"]}]}
+     {"scramblies" [{:file/name "README.md", :parent ["scramblies"]}]}
+     {"scramblies"
+      [{:file/name "project.clj", :parent ["scramblies"]}]}])
+
+  (reduce n/join-node nodes)
   )

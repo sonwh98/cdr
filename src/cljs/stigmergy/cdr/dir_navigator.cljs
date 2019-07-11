@@ -2,19 +2,15 @@
   (:require [stigmergy.tily :as tily]
             [reagent.core :as r]
             [taoensso.timbre :as log :include-macros true]
-            [stigmergy.cdr.state :as state]))
+            [stigmergy.cdr.state :as state]
+            [stigmergy.cdr.node :as n]
+            ))
 
 (defn toggle [node evt]
   (let [element (.-target evt)
         parent (.-parentElement element)]
     (swap! node update :visible? not)
     (.. parent (querySelector ".sub-dir") -classList (toggle "active"))))
-
-(defn get-name [node]
-  (-> node keys first))
-
-(defn get-children [node]
-  (-> node vals first))
 
 (defn context-menu-handler [evt on-context-menu]
   (let [x (- (.-clientX evt) 15)
@@ -23,30 +19,35 @@
     (on-context-menu x y)))
 
 (defn dir [{:keys [node on-click on-context-menu] :as args}]
-  (let [select-node #(swap! state/app-state assoc :selected-node %)]
+  (let [select-node (fn [node]
+                      (prn "select-node=" node)
+                      (swap! state/app-state assoc :selected-node node))]
     [:li
      [:span {:class "dir"
              :on-click #(do
                           (select-node @node)
                           (toggle node %))
-             :on-context-menu  #(context-menu-handler % on-context-menu)}
-      (get-name @node)]
-     [:ul {:class (if (:visible? @node)
-                    "sub-dir active"
-                    "sub-dir")
-           :style {:list-style-type :none}}
-      (let [index-children (-> @node get-children tily/with-index)]
+             :on-context-menu  #(do
+                                  (select-node @node)
+                                  (context-menu-handler % on-context-menu))}
+      (n/get-name @node)]
+     
+     [ :ul {:class (if (:visible? @node)
+                     "sub-dir active"
+                     "sub-dir")
+            :style {:list-style-type :none}}
+      (let [index-children (-> @node n/get-children tily/with-index)]
         (doall (for [[index c] index-children
                      :let [k (-> @node keys first)
                            child (r/cursor node [k index])]]
-                 (with-meta (if-let [file-name (:name c)]
+                 (with-meta (if (n/file? c)
                               [:li {:on-click #(do
                                                  (select-node c)
                                                  (on-click c))
                                     :on-context-menu #(do
                                                         (select-node c)
                                                         (context-menu-handler % on-context-menu))}
-                               file-name]
+                               (:file/name c)]
                               [dir (merge args {:node child}) ])
                    {:key (str c)}))))]]))
 
@@ -66,7 +67,7 @@
                         v))
 
 (defn rm [node]
-  (let [project (-> node :dir-path first)]
+  (let [project (-> node :parent first)]
     (swap! state/app-state update-in [:projects project :src-tree project]
            (fn [n]
              (vec (tily/remove-nils (clojure.walk/prewalk (fn [a]
@@ -79,4 +80,7 @@
   (get-in @app-state [:projects "tweenie" :src-tree "tweenie"  1])
   (get-in @app-state [:projects "tweenie" :src-tree "tweenie" ])
   (get-in @app-state [:projects "lightning-fs" :src-tree "lightning-fs" ])
+
+
   )
+
