@@ -1,22 +1,39 @@
-(ns stigmergy.node
+(ns stigmergy.cdr.node
   (:require [stigmergy.tily :as tily]))
 
-(defn dir? [f-or-d]
-  (and (= 1 (count f-or-d))
-       (-> f-or-d ffirst string?)))
-
-(defn file? [f-or-d]
+(defn file? [f-or-d ]
   (tily/some-in? :file/name (keys f-or-d)))
+
+(defn dir? [f-or-d]
+  (-> f-or-d file? not))
 
 (defn ->path [f]
   (-> f (clojure.string/split #"/") rest vec))
+
+(defn get-name [node]
+  (prn "get-name node=" node)
+  (let [result (cond
+                 (dir? node) (-> node (dissoc :parent :file/name) keys first)
+                 (file? node) (:file/name node)
+                 :else "invalid node")]
+    (prn "get-name result=" result)
+    result
+    )) 
+
+(defn get-children [node]
+  (prn "get-children node=" node)
+  (let [result (cond
+                 (dir? node) (-> node  vals first)
+                 (file? node) "file cannot have children"
+                 :else "don't know"
+                 )]
+    (prn "get-children result=" result)
+    result))
 
 (defn get-parent-path [full-path paths]
   (->> full-path (drop-last (count paths)) vec))
 
 (defn ->node-helper [full-path paths node]
-  (prn "full-path=" full-path " paths=" paths)
-  (prn "node=" node)
   (cond
     (empty? paths) node
     (= 2 (count paths)) (let [[path file] paths
@@ -24,8 +41,6 @@
                               n (assoc node path [{:file/name file
                                                    :parent file-parent-path}])
                               parent-path (get-parent-path full-path paths)]
-                          (prn "parent-path1=" parent-path)
-                          (prn "n=" n)
                           (if (empty? parent-path)
                             n
                             (assoc n :parent parent-path)))
@@ -34,12 +49,10 @@
                          p
                          [(->node-helper full-path (rest paths) {})])
                 parent-path (get-parent-path full-path paths)]
-            (prn "parent-path2=" parent-path)
+
             (if (empty? parent-path)
               n
               (let [n2 (assoc n :parent parent-path)]
-                (prn "n2=" n2)
-
                 n2)))))
 
 (defn ->node [paths]
@@ -54,33 +67,21 @@
        ffirst))
 
 (defn join-node [a b]
-  ;; (prn "a=" a)
-  ;; (prn "b=" b)
   (cond
     (and (sequential? a) (map? b)) (let [k (-> b (dissoc :parent :file/name) ffirst)
                                          i (index-of a k)]
-                                     ;;(prn "k=" k " i=" i)
                                      (if i
                                        (let [c (a i)
                                              d (join-node c b)
                                              e (-> (tily/drop-nth a i)
                                                    (tily/insert-at i d))]
-                                         ;; (prn "c=" c)
-                                         ;; (prn "d=" d)
-                                         ;; (prn "e=" e)
                                          e)
                                        (let [r (into a [b])]
-                                         ;; (prn "a2=" a)
-                                         ;; (prn "b2=" b)
-                                         ;; (prn "r=" r)
                                          r)))
     (and (map? a) (map? b)) (let [a-keys (keys a)
                                   b-keys (keys b)
-                                  ;; _ (prn "a-keys=" a-keys)
-                                  ;; _ (prn "b-keys=" b-keys)
                                   common-keys (clojure.set/intersection (set a-keys) (set b-keys))
                                   common-keys (disj common-keys :parent :file/name)]
-                              ;;(prn "common-keys=" common-keys)
                               (if (empty? common-keys)
                                 [a b]
                                 (let [ab (merge a b)
@@ -94,8 +95,6 @@
                                                             (sequential? bv)) (let [av-bv (into av bv)
                                                                                     joined (reduce join-node
                                                                                                    av-bv)]
-                                                                                ;; (prn "av-bv=" av-bv)
-                                                                                ;; (prn "joined=" joined)
                                                                                 (if (sequential? joined)
                                                                                   [ck  joined]
                                                                                   [ck [joined]]))
