@@ -246,9 +246,9 @@
   (let [cm (js/document.querySelector ".CodeMirror")]
     cm (.. cm -CodeMirror)))
 
-(def project-manager (let [open-file (fn  [{:keys [name dir-path] :as file}]
+(def project-manager (let [open-file (fn  [{:keys [file/name parent] :as file}]
                                        (let [cm (get-code-mirror)
-                                             dir-path (str/join "/" dir-path)
+                                             dir-path (str/join "/" parent)
                                              file-name (str "/" dir-path "/" name)]
                                          (a/go
                                            (let [[err file-content] (a/<! (await (js/window.pfs.readFile file-name)))
