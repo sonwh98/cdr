@@ -2,10 +2,10 @@
   (:require [reagent.core :as r]))
 
 (def app-state (r/atom {:current-ns 'cljs.user
-                        :projects {"cdr" {:git {:url ""
-                                                :username ""
-                                                :password ""}
-                                          :src-tree nil}}
+                        ;; :projects {"cdr" {:git {:url ""
+                        ;;                         :username ""
+                        ;;                         :password ""}
+                        ;;                   :src-tree nil}}
                         :project-manager {:visible? true}
                         :context-menu {:x 0 :y 0
                                        :visible? false}
