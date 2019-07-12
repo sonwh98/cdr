@@ -142,18 +142,16 @@
                                 :on-click #(a/go
                                              (when-let [selected-node (-> @state/app-state :selected-node)]
                                                (if (n/file?  selected-node)
-                                                 (let [file-name (:name selected-node)
-                                                       dir (str "/" (str/join "/" (:dir-path selected-node)))
-                                                       full-file-name (str dir "/" file-name)]
+                                                 (let [file-name (:file/name selected-node)
+                                                       parent (str "/" (str/join "/" (:parent selected-node)))
+                                                       full-file-name (str parent "/" file-name)]
                                                    (a/<! (git/rm full-file-name))
                                                    (a/<! (fs/rm full-file-name))
                                                    (dir/rm selected-node))
                                                  (let [dir (-> selected-node keys)
-                                                       dir-path (:dir-path selected-node)]
+                                                       parent (:parent selected-node)]
                                                    (prn "dir=" dir)
-                                                   (prn "path=" dir-path)
-                                                   ;;(prn "selected-node=" selected-node)
-                                                   
+                                                   (prn "parent=" parent)
                                                    )
                                                  )
                                                
