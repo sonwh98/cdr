@@ -302,11 +302,7 @@
                          :reagent-render
                          (fn [project-manager-state projects-state]
                            (let [width (or (-> @project-manager-state :width)
-                                           min-width)
-                                 ;;projects-state (r/cursor state/app-state [:projects])
-                                 ]
-                             (prn "project-manager2")
-                             
+                                           min-width)]
                              [:div {:style {:position :absolute
                                             :display (if (-> @project-manager-state :visible?)
                                                        :block
@@ -320,7 +316,6 @@
                                             :overflow-x :hidden
                                             :overflow-y :auto}
                                     :on-click #(hide-context-menu)}
-
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree empty? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]

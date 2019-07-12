@@ -11,24 +11,17 @@
   (-> f (clojure.string/split #"/") rest vec))
 
 (defn get-name [node]
-  (prn "get-name node=" node)
-  (let [result (cond
-                 (dir? node) (-> node (dissoc :parent :file/name) keys first)
-                 (file? node) (:file/name node)
-                 :else "invalid node")]
-    (prn "get-name result=" result)
-    result
-    )) 
+  (let [name (cond
+               (dir? node) (-> node (dissoc :parent :file/name) keys first)
+               (file? node) (:file/name node)
+               :else "invalid node")]
+    name))
 
 (defn get-children [node]
-  (prn "get-children node=" node)
-  (let [result (cond
-                 (dir? node) (-> node  vals first)
-                 (file? node) "file cannot have children"
-                 :else "don't know"
-                 )]
-    (prn "get-children result=" result)
-    result))
+  (let [children (cond
+                   (dir? node) (-> node  vals first)
+                   (file? node) "file cannot have children")]
+    children))
 
 (defn get-parent-path [full-path paths]
   (->> full-path (drop-last (count paths)) vec))

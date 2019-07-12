@@ -69,16 +69,13 @@
 (defn mk-dir-tree
   "builds a tree given the directory name"
   [dir]
-  (prn "dir=" dir)
   (a/go (let [files (atom [])]
           (a/<! (walk-dir {:dir dir
                            :on-file (fn [file]
                                       (when-not (re-find #".git" file)
                                         (swap! files conj file)))}))
-          (prn "files=" @files)
           (let [nodes (mapv mk-node
                             @files)]
-            (prn "nodes=" nodes)
             (reduce n/join-node nodes)))))
 
 (comment
