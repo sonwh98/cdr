@@ -42,26 +42,11 @@
         err
         data))))
 
-;; (defn file? [f-or-d]
-;;   (utily/some-in? :name (keys f-or-d)))
-
-;; (defn dir? [f-or-d]
-;;   (and (= 1 (count f-or-d))
-;;        (-> f-or-d ffirst string?)))
-
 (defn rm [file-path]
   (a/go
     (log/info "rm " file-path)
     (js/window.pfs.unlink file-path)))
 
-#_(defn mk-tree
-    "builds a tree by parsing a the string structure of a file path"
-    [files]
-    (let [nodes (mapv #(-> % ->path ->node)
-                      files)]
-      (prn nodes)
-      #_(reduce join-node nodes)
-      ))
 
 (defn mk-node [file]
   (-> file n/->path n/->node))
