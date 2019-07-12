@@ -18,38 +18,38 @@
     (.. evt preventDefault)
     (on-context-menu x y)))
 
+(defn select-node [node]
+  (swap! state/app-state assoc :selected-node node))
+
 (defn dir [{:keys [node on-click on-context-menu] :as args}]
-  (let [select-node (fn [node]
-                      (prn "select-node=" node)
-                      (swap! state/app-state assoc :selected-node node))]
-    [:li
-     [:span {:class "dir"
-             :on-click #(do
-                          (select-node @node)
-                          (toggle node %))
-             :on-context-menu  #(do
-                                  (select-node @node)
-                                  (context-menu-handler % on-context-menu))}
-      (n/get-name @node)]
-     
-     [ :ul {:class (if (:visible? @node)
-                     "sub-dir active"
-                     "sub-dir")
-            :style {:list-style-type :none}}
-      (let [index-children (-> @node n/get-children tily/with-index)]
-        (doall (for [[index c] index-children
-                     :let [k (-> @node keys first)
-                           child (r/cursor node [k index])]]
-                 (with-meta (if (n/file? c)
-                              [:li {:on-click #(do
-                                                 (select-node c)
-                                                 (on-click c))
-                                    :on-context-menu #(do
-                                                        (select-node c)
-                                                        (context-menu-handler % on-context-menu))}
-                               (:file/name c)]
-                              [dir (merge args {:node child}) ])
-                   {:key (str c)}))))]]))
+  [:li
+   [:span {:class "dir"
+           :on-click #(do
+                        (select-node @node)
+                        (toggle node %))
+           :on-context-menu  #(do
+                                (select-node @node)
+                                (context-menu-handler % on-context-menu))}
+    (n/get-name @node)]
+   
+   [ :ul {:class (if (:visible? @node)
+                   "sub-dir active"
+                   "sub-dir")
+          :style {:list-style-type :none}}
+    (let [index-children (-> @node n/get-children tily/with-index)]
+      (doall (for [[index c] index-children
+                   :let [k (-> @node keys first)
+                         child (r/cursor node [k index])]]
+               (with-meta (if (n/file? c)
+                            [:li {:on-click #(do
+                                               (select-node c)
+                                               (on-click c))
+                                  :on-context-menu #(do
+                                                      (select-node c)
+                                                      (context-menu-handler % on-context-menu))}
+                             (:file/name c)]
+                            [dir (merge args {:node child}) ])
+                 {:key (str c)}))))]])
 
 (defn tree [{:keys [node] :as args}]
   [:ul {:style {:list-style-type :none
@@ -67,6 +67,7 @@
 
 (defn rm [node]
   (let [project (-> node :parent first)]
+    
     (swap! state/app-state update-in [:projects project :src-tree project]
            (fn [n]
              (vec (tily/remove-nils (clojure.walk/prewalk (fn [a]
