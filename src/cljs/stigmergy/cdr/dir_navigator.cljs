@@ -56,8 +56,7 @@
                 :overflow :auto
                 :margin 0
                 :padding 0}}
-   [dir args]
-   ])
+   [dir args]])
 
 (defn rm-nil [v]
   (clojure.walk/prewalk (fn [a]
