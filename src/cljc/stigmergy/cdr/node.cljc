@@ -1,5 +1,6 @@
 (ns stigmergy.cdr.node
-  (:require [stigmergy.tily :as tily]))
+  (:require [stigmergy.tily :as tily]
+            [taoensso.timbre :as log :include-macros true]))
 
 (defn file? [f-or-d ]
   (tily/some-in? :file/name (keys f-or-d)))
@@ -93,7 +94,7 @@
                                                                                   [ck [joined]]))
                                                        :else [ck (conj [av] bv)])))]
                                   (merge ab ab2))))
-    :else (prn "error")))
+    :else (log/warn "unable to join nodes " a b)))
 
 (comment
   (def files ["/scramblies/resources/public/index.html" "/scramblies/src/clj/scramblies/core.clj" "/scramblies/src/clj/scramblies/server.clj" "/scramblies/src/clj/user.clj" "/scramblies/src/cljs/scramblies/core.cljs" "/scramblies/test/scramblies/tests.clj" "/scramblies/README.md" "/scramblies/project.clj"])
