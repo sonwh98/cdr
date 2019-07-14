@@ -66,9 +66,9 @@
                         v))
 
 (defn rm [node]
-  (let [project (-> node :parent first)]
+  (let [project-name (-> node :parent first)]
     
-    (swap! state/app-state update-in [:projects project :src-tree project]
+    (swap! state/app-state update-in [:projects project-name :src-tree project-name]
            (fn [n]
              (vec (tily/remove-nils (clojure.walk/prewalk (fn [a]
                                                             (if (= a node)
