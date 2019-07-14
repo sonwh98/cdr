@@ -28,7 +28,7 @@
 
 (defn menu-item [{:keys [label on-click]}]
   [:a {:href "#"
-       :on-click #(do
+       :on-click #(do 
                     (hide-context-menu)
                     (when on-click
                       (on-click %)))} label])
@@ -126,7 +126,7 @@
                                                       ]
                                                   (a/go
                                                     (pp/pprint (first (a/<! (git/log "/scramblies")))))
-
+                                                  
                                                   ))}]
                    [menu-item {:label "pull"}]
                    [menu-item {:label "push"}]
@@ -149,8 +149,7 @@
                                                                    (str parent "/" dir-name)))]
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
-                                                 (dir/rm selected-node))
-                                               ))}]
+                                                 (dir/rm selected-node))))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go
                                              (let [selected-node (-> @state/app-state :selected-node)
