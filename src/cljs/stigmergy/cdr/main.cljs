@@ -141,15 +141,12 @@
                     [menu-item {:label "rm"
                                 :on-click #(a/go
                                              (when-let [selected-node (-> @state/app-state :selected-node)]
-                                               (let [full-path (if (n/file?  selected-node)
-                                                                 (let [file-name (:file/name selected-node)
-                                                                       parent (str "/" (str/join "/" (:parent selected-node)))
-                                                                       full-file-path (str parent "/" file-name)]
-                                                                   full-file-path)
-                                                                 (let [dir (-> selected-node (dissoc :parent) keys first)
-                                                                       parent (str "/" (str/join "/" (:parent selected-node)))
-                                                                       full-dir-path (str parent "/" dir)]
-                                                                   full-dir-path))]
+                                               (let [parent (str "/" (str/join "/" (:parent selected-node)))
+                                                     full-path (if (n/file?  selected-node)
+                                                                 (let [file-name (:file/name selected-node)]
+                                                                   (str parent "/" file-name))
+                                                                 (let [dir-name (-> selected-node (dissoc :parent) keys first)]
+                                                                   (str parent "/" dir-name)))]
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
                                                  (dir/rm selected-node))
