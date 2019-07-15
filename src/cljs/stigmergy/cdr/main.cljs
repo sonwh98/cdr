@@ -146,7 +146,11 @@
                                                                  (let [file-name (:file/name selected-node)]
                                                                    (str parent "/" file-name))
                                                                  (let [dir-name (-> selected-node (dissoc :parent) keys first)]
-                                                                   (str parent "/" dir-name)))]
+                                                                   (if (= "/" parent)
+                                                                     (str "/" dir-name)
+                                                                     (str parent "/" dir-name))))]
+                                                 (prn "parent=" parent)
+                                                 (prn "full-path=" full-path)
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
                                                  (dir/rm selected-node))))}]
@@ -308,6 +312,7 @@
                                             :overflow-x :hidden
                                             :overflow-y :auto}
                                     :on-click #(hide-context-menu)}
+                              ;;(prn "prjects-state=" @projects-state)
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree empty? not)
                                     :let [st (r/cursor projects-state [project-name :src-tree])]]
@@ -335,7 +340,6 @@
         projects-state (r/cursor state [:projects])
         dialog-state (r/cursor state [:dialog])]
     (fn [state]
-
       [:div
        [left-panel]
        [project-manager project-manager-state projects-state]
@@ -371,5 +375,7 @@
          src-tree)
   (-> @state/app-state :projects keys)
 
+  (swap! state/app-state update-in [:projects] (fn [projects]
+                                                 (dissoc projects "scramblies")))
   )
 
