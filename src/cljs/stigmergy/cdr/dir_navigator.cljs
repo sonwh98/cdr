@@ -22,6 +22,7 @@
   (swap! state/app-state assoc :selected-node node))
 
 (defn dir [{:keys [node on-click on-context-menu] :as args}]
+  (prn "dir=" (first @node))
   [:li
    [:span {:class "dir"
            :on-click #(do
@@ -36,20 +37,22 @@
                    "sub-dir active"
                    "sub-dir")
           :style {:list-style-type :none}}
-    (let [index-children (-> @node n/get-children tily/with-index)]
-      (doall (for [[index c] index-children
-                   :let [k (-> @node keys first)
-                         child (r/cursor node [k index])]]
-               (with-meta (if (n/file? c)
-                            [:li {:on-click #(do
-                                               (select-node c)
-                                               (on-click c))
-                                  :on-context-menu #(do
-                                                      (select-node c)
-                                                      (context-menu-handler % on-context-menu))}
-                             (:file/name c)]
-                            [dir (merge args {:node child}) ])
-                 {:key (str c)}))))]])
+    (when (:visible? @node)
+      (let [index-children (-> @node n/get-children tily/with-index)]
+        (doall (for [[index c] index-children
+                     :let [k (-> @node keys first)
+                           child (r/cursor node [k index])]]
+                 (with-meta (if (n/file? c)
+                              [:li {:on-click #(do
+                                                 (select-node c)
+                                                 (on-click c))
+                                    :on-context-menu #(do
+                                                        (select-node c)
+                                                        (context-menu-handler % on-context-menu))}
+                               (:file/name c)]
+                              [dir (merge args {:node child}) ])
+                   {:key (str c)})))))]])
+
 
 (defn tree [{:keys [node] :as args}]
   [:ul {:style {:list-style-type :none
