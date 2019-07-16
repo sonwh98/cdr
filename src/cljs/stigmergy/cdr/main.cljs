@@ -141,15 +141,15 @@
                     [menu-item {:label "rm"
                                 :on-click #(a/go
                                              (when-let [selected-node (-> @state/app-state :selected-node)]
-                                               (let [parent (str "/" (str/join "/" (:parent selected-node)))
+                                               (let [parent-path-str (str "/" (str/join "/" (:parent selected-node)))
                                                      full-path (if (n/file?  selected-node)
                                                                  (let [file-name (:file/name selected-node)]
-                                                                   (str parent "/" file-name))
+                                                                   (str parent-path-str "/" file-name))
                                                                  (let [dir-name (-> selected-node (dissoc :parent) keys first)]
-                                                                   (if (= "/" parent)
+                                                                   (if (= "/" parent-path-str)
                                                                      (str "/" dir-name)
-                                                                     (str parent "/" dir-name))))]
-                                                 (prn "parent=" parent)
+                                                                     (str parent-path-str "/" dir-name))))]
+                                                 (prn "parent-path-str=" parent-path-str)
                                                  (prn "full-path=" full-path)
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
