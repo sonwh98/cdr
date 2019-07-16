@@ -21,8 +21,9 @@
 (defn select-node [node]
   (swap! state/app-state assoc :selected-node node))
 
+;;TODO refactor to prevent excess re-render of parent when child changes
 (defn dir [{:keys [node on-click on-context-menu] :as args}]
-  (prn "dir=" (first @node))
+  (prn "dir=" (keys @node))
   [:li
    [:span {:class "dir"
            :on-click #(do
