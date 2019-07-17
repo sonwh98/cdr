@@ -8,7 +8,8 @@
             
             [clojure.string :as str]
             [clojure.pprint :as pp]
-            
+
+            [stigmergy.tily :as tily]
             [stigmergy.tily.js :as util]
             [stigmergy.eve :as eve]
 
@@ -148,12 +149,32 @@
                                                                  (let [dir-name (-> selected-node (dissoc :parent) keys first)]
                                                                    (if (= "/" parent-path-str)
                                                                      (str "/" dir-name)
-                                                                     (str parent-path-str "/" dir-name))))]
+                                                                     (str parent-path-str "/" dir-name))))
+                                                     project-name (if-let [root (-> selected-node :parent first)]
+                                                                    root
+                                                                    (-> selected-node (dissoc :parent) keys first))
+                                                     root? (-> selected-node :parent nil?)]
                                                  (prn "parent-path-str=" parent-path-str)
                                                  (prn "full-path=" full-path)
+                                                 (prn "project-name=" project-name)
+                                                 
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
-                                                 (dir/rm selected-node))))}]
+                                                 
+                                                 (if root?
+                                                   (swap! state/app-state
+                                                          update-in [:projects] (fn [projects]
+                                                                                  (dissoc projects project-name)))
+                                                   
+                                                   (swap! state/app-state
+                                                          update-in [:projects project-name :src-tree project-name]
+                                                          (fn [n]
+                                                            (vec (tily/remove-nils (clojure.walk/prewalk
+                                                                                    (fn [a]
+                                                                                      (if (= a selected-node)
+                                                                                        nil
+                                                                                        a))
+                                                                                    n)))))))))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go
                                              (let [selected-node (-> @state/app-state :selected-node)

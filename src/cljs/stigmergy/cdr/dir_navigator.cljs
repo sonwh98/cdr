@@ -62,23 +62,6 @@
                 :padding 0}}
    [dir args]])
 
-(defn rm-nil [v]
-  (clojure.walk/prewalk (fn [a]
-                          (if (vector? a)
-                            (vec (remove nil? a))
-                            a))
-                        v))
-
-(defn rm [node]
-  (let [project-name (-> node :parent first)]
-    
-    (swap! state/app-state update-in [:projects project-name :src-tree project-name]
-           (fn [n]
-             (vec (tily/remove-nils (clojure.walk/prewalk (fn [a]
-                                                            (if (= a node)
-                                                              nil
-                                                              a))
-                                                          n)))))))
 
 (comment
   (get-in @app-state [:projects "tweenie" :src-tree "tweenie"  1])
