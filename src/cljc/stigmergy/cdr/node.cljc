@@ -8,6 +8,9 @@
 (defn dir? [f-or-d]
   (-> f-or-d file? not))
 
+(defn root? [node]
+  (-> node :parent nil?))
+
 (defn ->path [f]
   (-> f (clojure.string/split #"/") rest vec))
 

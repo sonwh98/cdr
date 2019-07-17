@@ -152,8 +152,7 @@
                                                                      (str parent-path-str "/" dir-name))))
                                                      project-name (if-let [root (-> selected-node :parent first)]
                                                                     root
-                                                                    (-> selected-node (dissoc :parent) keys first))
-                                                     root? (-> selected-node :parent nil?)]
+                                                                    (-> selected-node (dissoc :parent) keys first))]
                                                  (prn "parent-path-str=" parent-path-str)
                                                  (prn "full-path=" full-path)
                                                  (prn "project-name=" project-name)
@@ -161,7 +160,7 @@
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
                                                  
-                                                 (if root?
+                                                 (if (n/root? selected-node)
                                                    (swap! state/app-state
                                                           update-in [:projects] (fn [projects]
                                                                                   (dissoc projects project-name)))
