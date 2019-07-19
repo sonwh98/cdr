@@ -133,6 +133,11 @@
                    [menu-item {:label "push"}]
                    [menu-item {:label "reset"}]])
 
+(defn get-project-name [selected-node]
+  (if-let [root (-> selected-node :parent first)]
+    root
+    (-> selected-node (dissoc :parent) keys first)))
+
 (def git-file-menu [[menu-label {:label "Git"}]
                     [menu-item {:label "commit"}]
                     [menu-item {:label "diff"}]
@@ -143,16 +148,8 @@
                                 :on-click #(a/go
                                              (when-let [selected-node (-> @state/app-state :selected-node)]
                                                (let [parent-path-str (str "/" (str/join "/" (:parent selected-node)))
-                                                     full-path (n/get-node-path selected-node) #_(if (n/file?  selected-node)
-                                                                                                   (let [file-name (:file/name selected-node)]
-                                                                                                     (str parent-path-str "/" file-name))
-                                                                                                   (let [dir-name (-> selected-node (dissoc :parent) keys first)]
-                                                                                                     (if (= "/" parent-path-str)
-                                                                                                       (str "/" dir-name)
-                                                                                                       (str parent-path-str "/" dir-name))))
-                                                     project-name (if-let [root (-> selected-node :parent first)]
-                                                                    root
-                                                                    (-> selected-node (dissoc :parent) keys first))]
+                                                     full-path (n/get-node-path selected-node) 
+                                                     project-name (get-project-name selected-node)]
                                                  (prn "parent-path-str=" parent-path-str)
                                                  (prn "full-path=" full-path)
                                                  (prn "project-name=" project-name)
