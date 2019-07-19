@@ -22,11 +22,15 @@
                :else "invalid node")]
     name))
 
+(defn throw-exception [msg]
+  #?(:cljs (throw (js/Error. msg)))
+  #?(:clj (throw (Exception. msg)))
+  )
+
 (defn get-children [node]
-  (let [children (cond
-                   (dir? node) (-> node  vals first)
-                   (file? node) "file cannot have children")]
-    children))
+  (if (dir? node)
+    (-> node  vals first)
+    (throw-exception "only directory can have children")))
 
 (defn get-parent-path [full-path paths]
   (->> full-path (drop-last (count paths)) vec))
