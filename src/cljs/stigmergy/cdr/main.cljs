@@ -143,13 +143,13 @@
                                 :on-click #(a/go
                                              (when-let [selected-node (-> @state/app-state :selected-node)]
                                                (let [parent-path-str (str "/" (str/join "/" (:parent selected-node)))
-                                                     full-path (if (n/file?  selected-node)
-                                                                 (let [file-name (:file/name selected-node)]
-                                                                   (str parent-path-str "/" file-name))
-                                                                 (let [dir-name (-> selected-node (dissoc :parent) keys first)]
-                                                                   (if (= "/" parent-path-str)
-                                                                     (str "/" dir-name)
-                                                                     (str parent-path-str "/" dir-name))))
+                                                     full-path (n/get-node-path selected-node) #_(if (n/file?  selected-node)
+                                                                                                   (let [file-name (:file/name selected-node)]
+                                                                                                     (str parent-path-str "/" file-name))
+                                                                                                   (let [dir-name (-> selected-node (dissoc :parent) keys first)]
+                                                                                                     (if (= "/" parent-path-str)
+                                                                                                       (str "/" dir-name)
+                                                                                                       (str parent-path-str "/" dir-name))))
                                                      project-name (if-let [root (-> selected-node :parent first)]
                                                                     root
                                                                     (-> selected-node (dissoc :parent) keys first))
@@ -256,7 +256,18 @@
                                                                r (a/<! (core/async-eval s-expression))]
                                                            (prn s-expression)
                                                            (prn "r=" r)))}
-                            "Eval"]]))})))
+                            "Eval"]
+                           [mdc/button {:on-click (fn [evt]
+                                                    (let [selected-node (:selected-node @state/app-state)
+                                                          content  (.. @codemirror getValue)]
+                                                      (prn "selected-node=" selected-node)
+                                                      #_(if (n/file? selected-node)
+                                                          (let [file-path ])
+                                                          )
+                                                      )
+                                                    
+                                                    )} "Save"]
+                           ]))})))
 
 
 (defn get-code-mirror []

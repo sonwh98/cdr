@@ -1,5 +1,6 @@
 (ns stigmergy.cdr.node
   (:require [stigmergy.tily :as tily]
+            [clojure.string :as str]
             [taoensso.timbre :as log :include-macros true]))
 
 (defn file? [f-or-d ]
@@ -26,6 +27,17 @@
 
 (defn get-parent-path [full-path paths]
   (->> full-path (drop-last (count paths)) vec))
+
+(defn get-node-path [node] 
+  (let [parent-path-str (str "/" (str/join "/" (:parent node)))]
+    (if (file?  node)
+      (let [file-name (:file/name node)]
+        (str parent-path-str "/" file-name))
+      (let [dir-name (-> node (dissoc :parent) keys first)]
+        (if (= "/" parent-path-str)
+          (str "/" dir-name)
+          (str parent-path-str "/" dir-name)))))
+  )
 
 (defn ->node-helper [full-path paths node]
   (cond
