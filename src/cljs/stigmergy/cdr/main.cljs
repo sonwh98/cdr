@@ -203,20 +203,29 @@
 (defn close-project-manager []
   (swap! state/app-state assoc-in [:project-manager :visible?] false))
 
+(defn save-content [codemirror]
+  (let [selected-node (:selected-node @state/app-state)]
+    (if (n/file? selected-node)
+      (let [full-path (n/get-node-path selected-node)
+            content  (.. codemirror getValue)]
+        (fs/write-file full-path content)))))
+
 (defn code-area [state]
   (let [codemirror (atom nil)]
     (r/create-class
      {:component-did-mount (fn [this]
                              (let [{:keys [width height]} (util/get-dimensions)
                                    editor (js/document.getElementById "editor")
-                                   cm (js/CodeMirror.fromTextArea editor #js{:lineNumbers true
-                                                                             :mode "text/x-clojure"
-                                                                             :autoCloseBrackets true
-                                                                             :matchBrackets true
-                                                                             :theme "dracula"
-                                                                             :keyMap "emacs"
-                                                                             })]
-                               (.. cm (setSize nil height))
+                                   cm (js/CodeMirror.fromTextArea
+                                       editor
+                                       #js{:lineNumbers true
+                                           :mode "text/x-clojure"
+                                           :autoCloseBrackets true
+                                           :matchBrackets true
+                                           :theme "dracula"
+                                           :keyMap "emacs" 
+                                           :extraKeys #js{"Ctrl-S" save-content}})]
+                               (.. cm (setSize nil (* 0.95 height)))
                                (.. cm (on "focus"#(do
                                                     (close-project-manager)
                                                     (hide-context-menu))))
@@ -242,7 +251,8 @@
                         (let [{:keys [width height]} (util/get-dimensions)]
                           [:div {:style {:position :absolute
                                          :left 20
-                                         :width "100%"}}
+                                         :width "100%"
+                                         }}
                            [:textarea#editor]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
                                                                s-expression (cljs.reader/read-string
@@ -251,12 +261,7 @@
                                                            (prn s-expression)
                                                            (prn "r=" r)))}
                             "Eval"]
-                           [mdc/button {:on-click (fn [evt]
-                                                    (let [selected-node (:selected-node @state/app-state)]
-                                                      (if (n/file? selected-node)
-                                                        (let [full-path (n/get-node-path selected-node)
-                                                              content  (.. @codemirror getValue)]
-                                                          (fs/write-file full-path content)))))} "Save"]]))})))
+                           [mdc/button {:on-click #(save-content @codemirror)} "Save"]]))})))
 
 
 (defn get-code-mirror []
