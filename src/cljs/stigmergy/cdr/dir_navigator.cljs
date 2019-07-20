@@ -23,7 +23,7 @@
 
 ;;TODO refactor to prevent excess re-render of parent when child changes
 (defn dir [{:keys [node on-click on-context-menu] :as args}]
-  (prn "dir=" (keys @node))
+  ;;(prn "dir=" (keys @node))
   [:li
    [:span {:class "dir"
            :on-click #(do
