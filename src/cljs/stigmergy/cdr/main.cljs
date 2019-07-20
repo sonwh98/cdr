@@ -138,6 +138,23 @@
     root
     (-> selected-node (dissoc :parent) keys first)))
 
+(defn rm-node [selected-node]
+  (let [project-name (get-project-name selected-node)]
+    (if (n/root? selected-node)
+      (swap! state/app-state
+             update-in [:projects] (fn [projects]
+                                     (dissoc projects project-name)))
+      
+      (swap! state/app-state
+             update-in [:projects project-name :src-tree project-name]
+             (fn [n]
+               (vec (tily/remove-nils (clojure.walk/prewalk
+                                       (fn [a]
+                                         (if (= a selected-node)
+                                           nil
+                                           a))
+                                       n))))))))
+
 (def git-file-menu [[menu-label {:label "Git"}]
                     [menu-item {:label "commit"}]
                     [menu-item {:label "diff"}]
@@ -148,29 +165,10 @@
                                 :on-click #(a/go
                                              (when-let [selected-node (-> @state/app-state :selected-node)]
                                                (let [parent-path-str (str "/" (str/join "/" (:parent selected-node)))
-                                                     full-path (n/get-node-path selected-node) 
-                                                     project-name (get-project-name selected-node)]
-                                                 (prn "parent-path-str=" parent-path-str)
-                                                 (prn "full-path=" full-path)
-                                                 (prn "project-name=" project-name)
-                                                 
+                                                     full-path (n/get-node-path selected-node)]
                                                  (a/<! (git/rm full-path))
                                                  (a/<! (fs/rm full-path))
-                                                 
-                                                 (if (n/root? selected-node)
-                                                   (swap! state/app-state
-                                                          update-in [:projects] (fn [projects]
-                                                                                  (dissoc projects project-name)))
-                                                   
-                                                   (swap! state/app-state
-                                                          update-in [:projects project-name :src-tree project-name]
-                                                          (fn [n]
-                                                            (vec (tily/remove-nils (clojure.walk/prewalk
-                                                                                    (fn [a]
-                                                                                      (if (= a selected-node)
-                                                                                        nil
-                                                                                        a))
-                                                                                    n)))))))))}]
+                                                 (rm-node selected-node))))}]
                     [menu-item {:label "status"
                                 :on-click #(a/go
                                              (let [selected-node (-> @state/app-state :selected-node)
