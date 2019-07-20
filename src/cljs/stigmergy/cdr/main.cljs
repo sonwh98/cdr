@@ -263,10 +263,9 @@
                             "Eval"]
                            [mdc/button {:on-click #(save-content @codemirror)} "Save"]]))})))
 
-
 (defn get-code-mirror []
   (let [cm (js/document.querySelector ".CodeMirror")]
-    cm (.. cm -CodeMirror)))
+    (.. cm -CodeMirror)))
 
 (def project-manager (let [open-file (fn  [{:keys [file/name parent] :as file}]
                                        (let [cm (get-code-mirror)
