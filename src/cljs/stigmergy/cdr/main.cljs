@@ -252,16 +252,11 @@
                                                            (prn "r=" r)))}
                             "Eval"]
                            [mdc/button {:on-click (fn [evt]
-                                                    (let [selected-node (:selected-node @state/app-state)
-                                                          content  (.. @codemirror getValue)]
-                                                      (prn "selected-node=" selected-node)
-                                                      #_(if (n/file? selected-node)
-                                                          (let [file-path ])
-                                                          )
-                                                      )
-                                                    
-                                                    )} "Save"]
-                           ]))})))
+                                                    (let [selected-node (:selected-node @state/app-state)]
+                                                      (if (n/file? selected-node)
+                                                        (let [full-path (n/get-node-path selected-node)
+                                                              content  (.. @codemirror getValue)]
+                                                          (fs/write-file full-path content)))))} "Save"]]))})))
 
 
 (defn get-code-mirror []
