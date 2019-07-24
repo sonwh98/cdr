@@ -357,12 +357,13 @@
                                     :on-click #(do
                                                  (hide-context-menu)
                                                  (increment-z-index project-manager-state))}
-                              ;;(prn "prjects-state=" @projects-state)
-                              (for [[project-name {:keys [src-tree]}] @projects-state
-                                    :when (-> src-tree empty? not)
-                                    :let [st (r/cursor projects-state [project-name :src-tree])]]
-                                ^{:key project-name} [dir/tree {:node st :on-click open-file
-                                                                :on-context-menu show-file-options}])
+                              (if (empty? @projects-state)
+                                [:div "No git repository. Right click and clone a git repository"]
+                                (for [[project-name {:keys [src-tree]}] @projects-state
+                                      :when (-> src-tree empty? not)
+                                      :let [st (r/cursor projects-state [project-name :src-tree])]]
+                                  ^{:key project-name} [dir/tree {:node st :on-click open-file
+                                                                  :on-context-menu show-file-options}]))
                               [gripper]]))})))
 
 (defn left-panel [left-panel-state]
