@@ -21,7 +21,14 @@
             [stigmergy.cdr.git :as git]
             [stigmergy.cdr.dir-navigator :as dir]))
 
-(def z-index (r/atom 1))
+(def next-z-index (let [z-index (atom 1)]
+                    (fn []
+                      (let [next (inc @z-index)]
+                        (reset! z-index next)
+                        next))))
+
+(defn increment-z-index [a-state]
+  (swap! a-state assoc :z-index (next-z-index)))
 
 (defn hide-context-menu []
   (swap! state/app-state assoc-in [:context-menu :visible?] false))
@@ -200,7 +207,13 @@
     #_[:p "Some text in the Modal.."]]])
 
 (defn toggle-project-manager-visibility []
-  (swap! state/app-state update-in [:project-manager :visible?] not))
+  (swap! state/app-state update-in [:project-manager] (fn [pm]
+                                                        (-> pm
+                                                            (update-in [:visible?] not)
+                                                            (assoc-in [:z-index] (next-z-index)))))
+
+  (swap! state/app-state assoc-in [:left-panel :z-index] (next-z-index))
+  )
 
 (defn close-project-manager []
   (swap! state/app-state assoc-in [:project-manager :visible?] false))
@@ -333,13 +346,15 @@
                                                        :none)
                                             :left 20
                                             :top 0
-                                            :z-index 20
+                                            :z-index (:z-index @project-manager-state)
                                             :background-color :white
                                             :height "100%"
                                             :width width
                                             :overflow-x :hidden
                                             :overflow-y :auto}
-                                    :on-click #(hide-context-menu)}
+                                    :on-click #(do
+                                                 (hide-context-menu)
+                                                 (increment-z-index (r/cursor state/app-state [:left-panel])))}
                               ;;(prn "prjects-state=" @projects-state)
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree empty? not)
@@ -348,12 +363,13 @@
                                                                 :on-context-menu show-file-options}])
                               [gripper]]))})))
 
-(defn left-panel []
+(defn left-panel [left-panel-state]
   (let [{:keys [width height]} (util/get-dimensions)
         half-height (- (/ height 2) 10)] 
     [:div {:style {:position :absolute
                    :left 0
-                   :top 0}}
+                   :top 0
+                   :z-index (:z-index @left-panel-state)}}
      [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
                     :display :grid
                     :grid-template-columns "auto auto" 
@@ -380,6 +396,7 @@
                                         ;;:background-color :blue
                                         :height 5
                                         }
+                                :on-drag-start #(swap! bottom-panel-state assoc :z-index (next-z-index))
                                 :on-drag resize
                                 :on-drag-end resize}]
                     
@@ -392,21 +409,23 @@
                      :width width
                      :height (:height @bottom-panel-state)
                      :z-index (:z-index @bottom-panel-state)
-                     :background-color :red}}
+                     :background-color :red}
+             :on-click #(increment-z-index bottom-panel-state)}
        [h-gripper]
        "bottom"
        ]))
   )
 
 (defn main-ui [state]
-  (let [context-menu-state (r/cursor state [:context-menu])
+  (let [left-panel-state (r/cursor state [:left-panel])
+        context-menu-state (r/cursor state [:context-menu])
         project-manager-state (r/cursor state [:project-manager])
         projects-state (r/cursor state [:projects])
         dialog-state (r/cursor state [:dialog])
         bottom-panel-state (r/cursor state [:bottom-panel])]
     (fn [state]
       [:div
-       [left-panel]
+       [left-panel left-panel-state]
        [project-manager project-manager-state projects-state]
        (when (-> @context-menu-state :visible?)
          [context-menu context-menu-state])
