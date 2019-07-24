@@ -21,6 +21,8 @@
             [stigmergy.cdr.git :as git]
             [stigmergy.cdr.dir-navigator :as dir]))
 
+(def z-index (r/atom 1))
+
 (defn hide-context-menu []
   (swap! state/app-state assoc-in [:context-menu :visible?] false))
 
@@ -281,7 +283,8 @@
                                                  :menu-items git-file-menu}))
                            {:keys [width height]} (util/get-dimensions)
                            project-manager-state (r/cursor state/app-state [:project-manager])
-                           min-width (/ width 4)
+                           min-width 50
+                           default-width (/ width 4)
                            resize (fn [evt]
                                     (let [x (.-clientX evt)]
                                       (if (< x min-width)
@@ -323,7 +326,7 @@
                          :reagent-render
                          (fn [project-manager-state projects-state]
                            (let [width (or (-> @project-manager-state :width)
-                                           min-width)]
+                                           default-width)]
                              [:div {:style {:position :absolute
                                             :display (if (-> @project-manager-state :visible?)
                                                        :block
@@ -359,11 +362,48 @@
       [:button  "Structure"]
       [:button {:on-click toggle-project-manager-visibility} "Project"]]]))
 
+(defn bottom-panel [bottom-panel-state]
+  (let [{:keys [width height]} (util/get-dimensions)
+        min-height (/ height 4)
+        resize (fn [evt]
+                 (let [y (.-clientY evt)
+                       h (- height y)]
+                   (prn "h=" h )
+                   (swap! bottom-panel-state assoc-in [:height] h)
+                   ))
+        h-gripper (fn [] [:div {:draggable true
+                                :style {:position :relative
+                                        :cursor :ns-resize
+                                        :top 0
+                                        :left 0
+                                        :width width
+                                        ;;:background-color :blue
+                                        :height 5
+                                        }
+                                :on-drag resize
+                                :on-drag-end resize}]
+                    
+                    )]
+    (swap! bottom-panel-state assoc :height min-height)
+    (fn [bottom-panel-state]
+      [:div {:style {:position :absolute
+                     :left 0
+                     :bottom 0
+                     :width width
+                     :height (:height @bottom-panel-state)
+                     :z-index (:z-index @bottom-panel-state)
+                     :background-color :red}}
+       [h-gripper]
+       "bottom"
+       ]))
+  )
+
 (defn main-ui [state]
   (let [context-menu-state (r/cursor state [:context-menu])
         project-manager-state (r/cursor state [:project-manager])
         projects-state (r/cursor state [:projects])
-        dialog-state (r/cursor state [:dialog])]
+        dialog-state (r/cursor state [:dialog])
+        bottom-panel-state (r/cursor state [:bottom-panel])]
     (fn [state]
       [:div
        [left-panel]
@@ -372,7 +412,9 @@
          [context-menu context-menu-state])
        (when (-> @dialog-state :visible?)
          [dialog dialog-state])
-       [code-area state]]))) 
+       [code-area state]
+       [bottom-panel bottom-panel-state]
+       ]))) 
 
 
 (defn init []
