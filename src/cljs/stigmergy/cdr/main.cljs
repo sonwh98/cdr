@@ -193,7 +193,7 @@
 (defn context-menu [context-menu-state]
   (into [:div {:class "vertical-menu"
                :style {:position :absolute
-                       :z-index 100
+                       :z-index (increment-z-index context-menu-state)
                        :left (:x @context-menu-state)
                        :top (:y @context-menu-state)}}]
         (:menu-items @context-menu-state)))
