@@ -267,7 +267,7 @@
                           [:div {:style {:position :absolute
                                          :left 20
                                          :width "100%"
-                                         }}
+                                         :z-index (or (:z-index @state) 1)}}
                            [:textarea#editor]
                            [mdc/button {:on-click #(a/go (let [txt (.. @codemirror getValue)
                                                                s-expression (cljs.reader/read-string
@@ -346,7 +346,7 @@
                                                        :none)
                                             :left 20
                                             :top 0
-                                            :z-index (:z-index @project-manager-state)
+                                            :z-index (or (:z-index @project-manager-state) 1)
                                             :background-color :white
                                             :height "100%"
                                             :width width
@@ -369,7 +369,7 @@
     [:div {:style {:position :absolute
                    :left 0
                    :top 0
-                   :z-index (:z-index @left-panel-state)}}
+                   :z-index (or (:z-index @left-panel-state) 1)}}
      [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
                     :display :grid
                     :grid-template-columns "auto auto" 
@@ -419,7 +419,7 @@
                      :bottom 0
                      :width width
                      :height (:height @bottom-panel-state)
-                     :z-index (:z-index @bottom-panel-state)
+                     :z-index (or (:z-index @bottom-panel-state) 1)
                      :background-color :red}
              :on-click #(increment-z-index bottom-panel-state)}
        [h-gripper]
