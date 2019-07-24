@@ -378,6 +378,17 @@
       [:button  "Structure"]
       [:button {:on-click toggle-project-manager-visibility} "Project"]]]))
 
+(defn tab []
+  [:div
+   [:div {:class "w3-bar w3-black"}
+    [:button {:class "w3-bar-item w3-button"} "Local Changes"]
+    [:button {:class "w3-bar-item w3-button"} "Log"]]
+
+   [:div {:id "local-changes", :class "w3-container"}
+    [:h2 "Local Changes"]]
+   [:div {:id "log", :class "w3-container", :style {:display :none}}
+    [:h2 "Log"]]])
+
 (defn bottom-panel [bottom-panel-state]
   (let [{:keys [width height]} (util/get-dimensions)
         min-height (/ height 4)
@@ -412,9 +423,7 @@
                      :background-color :red}
              :on-click #(increment-z-index bottom-panel-state)}
        [h-gripper]
-       "bottom"
-       ]))
-  )
+       [tab]])))
 
 (defn main-ui [state]
   (let [left-panel-state (r/cursor state [:left-panel])
