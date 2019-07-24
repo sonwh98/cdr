@@ -28,7 +28,9 @@
                         next))))
 
 (defn increment-z-index [a-state]
-  (swap! a-state assoc :z-index (next-z-index)))
+  (let [z (next-z-index)]
+    (swap! a-state assoc :z-index z)
+    z))
 
 (defn hide-context-menu []
   (swap! state/app-state assoc-in [:context-menu :visible?] false))
@@ -265,7 +267,7 @@
       :reagent-render (fn [state]
                         (let [{:keys [width height]} (util/get-dimensions)]
                           [:div {:style {:position :absolute
-                                         :left 20
+                                         :left 30
                                          :width "100%"
                                          :z-index (or (:z-index @state) 1)}}
                            [:textarea#editor]
@@ -344,7 +346,7 @@
                                             :display (if (-> @project-manager-state :visible?)
                                                        :block
                                                        :none)
-                                            :left 20
+                                            :left 31
                                             :top 0
                                             :z-index (or (:z-index @project-manager-state) 1)
                                             :background-color :white
@@ -354,7 +356,7 @@
                                             :overflow-y :auto}
                                     :on-click #(do
                                                  (hide-context-menu)
-                                                 (increment-z-index (r/cursor state/app-state [:left-panel])))}
+                                                 (increment-z-index project-manager-state))}
                               ;;(prn "prjects-state=" @projects-state)
                               (for [[project-name {:keys [src-tree]}] @projects-state
                                     :when (-> src-tree empty? not)
@@ -367,16 +369,16 @@
   (let [{:keys [width height]} (util/get-dimensions)
         half-height (- (/ height 2) 10)] 
     [:div {:style {:position :absolute
-                   :left 0
+                   :left -5
                    :top 0
-                   :z-index (or (:z-index @left-panel-state) 1)}}
-     [:div {:style {:transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
-                    :display :grid
-                    :grid-template-columns "auto auto" 
-                    :width height
-                    :height 20}}
-      [:button  "Structure"]
-      [:button {:on-click toggle-project-manager-visibility} "Project"]]]))
+                   :z-index (or (:z-index @left-panel-state) 1)
+                   :transform (util/format "translate(-49%, %dpx) rotate(-90deg)" half-height)
+                   :display :grid
+                   :grid-template-columns "auto auto" 
+                   :width height
+                   :height 20}}
+     [:button  "Structure"]
+     [:button {:on-click toggle-project-manager-visibility} "Project"]]))
 
 (defn tab []
   [:div
