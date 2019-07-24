@@ -225,7 +225,7 @@
             content  (.. codemirror getValue)]
         (fs/write-file full-path content)))))
 
-(defn code-area [state]
+(defn editor [state]
   (let [codemirror (atom nil)]
     (r/create-class
      {:component-did-mount (fn [this]
@@ -440,7 +440,7 @@
          [context-menu context-menu-state])
        (when (-> @dialog-state :visible?)
          [dialog dialog-state])
-       [code-area state]
+       [editor state]
        [bottom-panel bottom-panel-state]
        ]))) 
 
