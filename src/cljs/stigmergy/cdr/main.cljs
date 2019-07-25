@@ -267,7 +267,7 @@
       :reagent-render (fn [state]
                         (let [{:keys [width height]} (util/get-dimensions)]
                           [:div {:style {:position :absolute
-                                         :left 30
+                                         :left 25
                                          :width "100%"
                                          :z-index (or (:z-index @state) 1)}}
                            [:textarea#editor]
@@ -346,7 +346,7 @@
                                             :display (if (-> @project-manager-state :visible?)
                                                        :block
                                                        :none)
-                                            :left 31
+                                            :left 25
                                             :top 0
                                             :z-index (or (:z-index @project-manager-state) 1)
                                             :background-color :white
